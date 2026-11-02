@@ -1,0 +1,420 @@
+openapi: 3.0.3
+info:
+  title: OpenControl ERP - Custom Fields API
+  version: 1.0.0
+  description: Public REST endpoints for managing dynamic custom field definitions and entity values.
+paths:
+  /api/v1/custom-fields/entities:
+    get:
+      summary: List all registered target entities supporting custom fields
+      operationId: listRegisteredEntities
+      tags:
+        - Custom Fields
+      responses:
+        '200':
+          description: List of registered entity descriptors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TargetEntityDescriptor'
+
+  /api/v1/custom-fields/definitions:
+    get:
+      summary: List custom field definitions for a target entity
+      operationId: listDefinitions
+      tags:
+        - Custom Fields
+      parameters:
+        - name: targetEntity
+          in: query
+          required: true
+          schema:
+            type: string
+            example: CUSTOMER
+        - name: activeOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Array of custom field definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomFieldDefinitionResponse'
+    post:
+      summary: Create a new custom field definition
+      operationId: createDefinition
+      tags:
+        - Custom Fields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomFieldDefinitionRequest'
+      responses:
+        '201':
+          description: Custom field definition created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFieldDefinitionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Duplicate field key for the same entity type
+
+  /api/v1/custom-fields/definitions/{id}:
+    get:
+      summary: Get custom field definition by ID
+      operationId: getDefinitionById
+      tags:
+        - Custom Fields
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Custom field definition details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFieldDefinitionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update custom field definition metadata
+      operationId: updateDefinition
+      tags:
+        - Custom Fields
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomFieldDefinitionRequest'
+      responses:
+        '200':
+          description: Custom field definition updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFieldDefinitionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/custom-fields/definitions/{id}/toggle-status:
+    patch:
+      summary: Toggle active/inactive status of a custom field definition
+      operationId: toggleStatus
+      tags:
+        - Custom Fields
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Status toggled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFieldDefinitionResponse'
+
+  /api/v1/custom-fields/definitions/reorder:
+    put:
+      summary: Reorder custom field definitions for an entity
+      operationId: reorderDefinitions
+      tags:
+        - Custom Fields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/FieldOrderDto'
+      responses:
+        '200':
+          description: Display order updated successfully
+
+  /api/v1/custom-fields/values/{targetEntity}/{entityId}:
+    get:
+      summary: Retrieve custom field values for an entity instance
+      operationId: getEntityCustomValues
+      tags:
+        - Custom Fields
+      parameters:
+        - name: targetEntity
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Map of field keys to values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityCustomFieldsResponse'
+    put:
+      summary: Save or update custom field values for an entity instance
+      operationId: saveEntityCustomValues
+      tags:
+        - Custom Fields
+      parameters:
+        - name: targetEntity
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveEntityCustomFieldsRequest'
+      responses:
+        '200':
+          description: Values saved and validated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityCustomFieldsResponse'
+        '400':
+          description: Validation error (type mismatch, missing required field, option violation)
+        '403':
+          description: Forbidden (insufficient permissions for admin-only field)
+
+components:
+  schemas:
+    FieldType:
+      type: string
+      enum: [TEXT, NUMBER, DECIMAL, DATE, BOOLEAN, SELECT]
+
+    TargetEntityDescriptor:
+      type: object
+      required: [entityCode, displayName, module]
+      properties:
+        entityCode:
+          type: string
+          example: CUSTOMER
+        displayName:
+          type: string
+          example: Customer
+        module:
+          type: string
+          example: CRM
+        description:
+          type: string
+
+    FieldOrderDto:
+      type: object
+      required: [id, displayOrder]
+      properties:
+        id:
+          type: string
+          format: uuid
+        displayOrder:
+          type: integer
+          example: 1
+
+    CreateCustomFieldDefinitionRequest:
+      type: object
+      required: [targetEntity, fieldKey, label, fieldType]
+      properties:
+        targetEntity:
+          type: string
+          example: CUSTOMER
+        fieldKey:
+          type: string
+          example: spouse_name
+        label:
+          type: string
+          example: Spouse Name
+        description:
+          type: string
+          example: Full name of customer's spouse
+        fieldType:
+          $ref: '#/components/schemas/FieldType'
+        required:
+          type: boolean
+          default: false
+        adminOnly:
+          type: boolean
+          default: false
+        readOnly:
+          type: boolean
+          default: false
+        defaultValue:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+          example: ["RETAIL", "WHOLESALE", "KEY_ACCOUNT"]
+        validationRules:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+            regex:
+              type: string
+        displayOrder:
+          type: integer
+          default: 0
+
+    UpdateCustomFieldDefinitionRequest:
+      type: object
+      required: [label]
+      properties:
+        label:
+          type: string
+        description:
+          type: string
+        required:
+          type: boolean
+        adminOnly:
+          type: boolean
+        readOnly:
+          type: boolean
+        defaultValue:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        validationRules:
+          type: object
+        displayOrder:
+          type: integer
+
+    CustomFieldDefinitionResponse:
+      type: object
+      required: [id, tenantId, targetEntity, fieldKey, label, fieldType, required, adminOnly, readOnly, displayOrder, isActive, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        targetEntity:
+          type: string
+        fieldKey:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        fieldType:
+          $ref: '#/components/schemas/FieldType'
+        required:
+          type: boolean
+        adminOnly:
+          type: boolean
+        readOnly:
+          type: boolean
+        defaultValue:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        validationRules:
+          type: object
+        displayOrder:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SaveEntityCustomFieldsRequest:
+      type: object
+      required: [values]
+      properties:
+        values:
+          type: object
+          additionalProperties: true
+          example:
+            spouse_name: "Jane Doe"
+            tier: "WHOLESALE"
+
+    EntityCustomFieldsResponse:
+      type: object
+      required: [targetEntity, entityId, values]
+      properties:
+        targetEntity:
+          type: string
+        entityId:
+          type: string
+          format: uuid
+        values:
+          type: object
+          additionalProperties: true
+        updatedAt:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters or body
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              status:
+                type: integer
+                example: 400
+              error:
+                type: string
+                example: Bad Request
+              message:
+                type: string
+    NotFound:
+      description: Requested resource was not found

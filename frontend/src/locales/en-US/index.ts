@@ -1,5 +1,6 @@
 import { TranslationDictionary } from '../../types/i18n';
 import { rulesEnUS } from './rules';
+import { customFieldsEnUS } from './customFields';
 
 export const enUS: TranslationDictionary = {
   common: {
@@ -86,4 +87,5 @@ export const enUS: TranslationDictionary = {
     allActions: 'All Actions',
   },
   rules: rulesEnUS,
+  customFields: customFieldsEnUS,
 };

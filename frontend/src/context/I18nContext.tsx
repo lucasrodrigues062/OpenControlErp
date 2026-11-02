@@ -47,27 +47,35 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     keyOrParams?: string | Record<string, string | number>,
     params?: Record<string, string | number>
   ): string => {
-    let namespace: keyof TranslationDictionary;
-    let key: string;
-    let actualParams = params;
+    let path: string[];
+    let actualParams: Record<string, string | number> | undefined;
 
     if (typeof keyOrParams === 'string') {
-      namespace = keyOrNamespace as keyof TranslationDictionary;
-      key = keyOrParams;
+      path = [...keyOrNamespace.split('.'), ...keyOrParams.split('.')];
+      actualParams = params;
     } else {
-      const parts = keyOrNamespace.split('.');
-      namespace = parts[0] as keyof TranslationDictionary;
-      key = parts[1];
+      path = keyOrNamespace.split('.');
       actualParams = keyOrParams;
     }
 
     const dict = dictionaries[currentLanguage];
     const fallbackDict = dictionaries['en-US'];
 
-    const targetNs = (dict?.[namespace] as unknown) as Record<string, string> | undefined;
-    const fallbackNs = (fallbackDict?.[namespace] as unknown) as Record<string, string> | undefined;
+    const resolvePath = (obj: any, pathParts: string[]): string | undefined => {
+      let current = obj;
+      for (const part of pathParts) {
+        if (current == null || typeof current !== 'object') {
+          return undefined;
+        }
+        current = current[part];
+      }
+      return typeof current === 'string' ? current : undefined;
+    };
 
-    let text = targetNs?.[key] ?? fallbackNs?.[key] ?? keyOrNamespace;
+    let text: string =
+      resolvePath(dict, path) ??
+      resolvePath(fallbackDict, path) ??
+      (typeof keyOrParams === 'string' ? keyOrParams : keyOrNamespace);
 
     if (actualParams) {
       Object.entries(actualParams).forEach(([paramKey, val]) => {

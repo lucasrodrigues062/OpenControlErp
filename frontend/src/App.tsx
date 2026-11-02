@@ -10,6 +10,7 @@ import { UsersPage } from './pages/UsersPage';
 import { ProfilesPage } from './pages/ProfilesPage';
 import { AuditPage } from './pages/AuditPage';
 import { RulesPage } from './pages/RulesPage';
+import { CustomFieldsSettingsPage } from './pages/CustomFieldsSettingsPage';
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,9 @@ export const App: React.FC = () => {
                   </Route>
                   <Route element={<ProtectedRoute requiredPermission="RULES_READ" />}>
                     <Route path="/rules" element={<RulesPage />} />
+                  </Route>
+                  <Route element={<ProtectedRoute requiredPermission="CUSTOM_FIELDS_READ" />}>
+                    <Route path="/settings/custom-fields" element={<CustomFieldsSettingsPage />} />
                   </Route>
                   <Route element={<ProtectedRoute requiredPermission="AUDIT_READ" />}>
                     <Route path="/audit" element={<AuditPage />} />

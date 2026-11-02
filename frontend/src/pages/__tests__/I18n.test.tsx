@@ -10,6 +10,7 @@ describe('I18n Catalogs & Formatting Logic', () => {
       iam: Object.keys(enUS.iam).sort(),
       audit: Object.keys(enUS.audit).sort(),
       rules: Object.keys(enUS.rules).sort(),
+      customFields: Object.keys(enUS.customFields).sort(),
     };
 
     const ptKeys = {
@@ -18,6 +19,7 @@ describe('I18n Catalogs & Formatting Logic', () => {
       iam: Object.keys(ptBR.iam).sort(),
       audit: Object.keys(ptBR.audit).sort(),
       rules: Object.keys(ptBR.rules).sort(),
+      customFields: Object.keys(ptBR.customFields).sort(),
     };
 
     expect(ptKeys.common).toEqual(enKeys.common);
@@ -25,6 +27,7 @@ describe('I18n Catalogs & Formatting Logic', () => {
     expect(ptKeys.iam).toEqual(enKeys.iam);
     expect(ptKeys.audit).toEqual(enKeys.audit);
     expect(ptKeys.rules).toEqual(enKeys.rules);
+    expect(ptKeys.customFields).toEqual(enKeys.customFields);
   });
 
   it('should format currency correctly according to locale standard', () => {
@@ -67,5 +70,12 @@ describe('I18n Catalogs & Formatting Logic', () => {
     });
 
     expect(text).toBe('User admin has role Administrator');
+  });
+
+  it('should resolve nested dot notation paths for custom field types', () => {
+    // Test direct resolution on ptBR and enUS customFields.types
+    expect(ptBR.customFields.types.TEXT).toBe('Texto (String)');
+    expect(ptBR.customFields.types.NUMBER).toBe('Número Inteiro');
+    expect(enUS.customFields.types.TEXT).toBe('Text (String)');
   });
 });

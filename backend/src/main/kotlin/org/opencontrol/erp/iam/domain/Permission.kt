@@ -59,6 +59,18 @@ enum class SystemPermission(
         "Manage Rules",
         "Allows creating, editing, and deleting custom business rules",
     ),
+    CUSTOM_FIELDS_READ(
+        "CUSTOM_FIELDS_READ",
+        "Custom Fields",
+        "View Custom Fields",
+        "Allows viewing custom field definitions and values",
+    ),
+    CUSTOM_FIELDS_MANAGE(
+        "CUSTOM_FIELDS_MANAGE",
+        "Custom Fields",
+        "Manage Custom Fields",
+        "Allows creating, editing, and organizing custom field definitions",
+    ),
 }
 
 @Embeddable

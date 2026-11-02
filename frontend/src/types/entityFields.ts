@@ -101,6 +101,16 @@ export const ENTITY_FIELDS_CATALOG: EntityField[] = [
 
   // --- CUSTOMER ---
   {
+    path: 'sale.customer.customFields',
+    label: 'Customer Custom Fields Map',
+    entity: 'Customer',
+    type: 'string',
+    description: "Dynamic custom fields map: e.g. sale.customer.customFields['spouse_name']",
+    example: "sale.customer.customFields['spouse_name']",
+    defaultOperator: 'NOT_EQUALS',
+    triggers: ['sale.created', 'sale.finalized', 'customer.created', 'customer.updated'],
+  },
+  {
     path: 'sale.customer.tier',
     label: 'Customer Segment / Tier',
     entity: 'Customer',
@@ -225,6 +235,16 @@ export const ENTITY_FIELDS_CATALOG: EntityField[] = [
   },
 
   // --- PRODUCT CATALOG ---
+  {
+    path: 'product.customFields',
+    label: 'Product Custom Fields Map',
+    entity: 'Product',
+    type: 'string',
+    description: "Dynamic custom fields map: e.g. product.customFields['expiration_shelf']",
+    example: "product.customFields['shelf_life']",
+    defaultOperator: 'NOT_EQUALS',
+    triggers: ['product.created', 'product.updated'],
+  },
   {
     path: 'product.sku',
     label: 'Product SKU',

@@ -170,4 +170,5 @@ export interface TranslationDictionary {
   iam: IamTranslations;
   audit: AuditTranslations;
   rules: RulesTranslations;
+  customFields: import('../locales/en-US/customFields').CustomFieldsTranslations;
 }

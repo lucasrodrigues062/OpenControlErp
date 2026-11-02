@@ -1,5 +1,6 @@
 import { TranslationDictionary } from '../../types/i18n';
 import { rulesPtBR } from './rules';
+import { customFieldsPtBR } from './customFields';
 
 export const ptBR: TranslationDictionary = {
   common: {
@@ -86,4 +87,5 @@ export const ptBR: TranslationDictionary = {
     allActions: 'Todas as Ações',
   },
   rules: rulesPtBR,
+  customFields: customFieldsPtBR,
 };
