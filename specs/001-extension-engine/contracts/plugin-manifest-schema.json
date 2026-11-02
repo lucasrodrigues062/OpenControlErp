@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OpenControlPluginManifest",
+  "description": "Manifest descriptor located at META-INF/opencontrol-plugin.json inside an App archive",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "version",
+    "vendor",
+    "minKernelVersion"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(\\.[a-z0-9]+)*$",
+      "description": "Reverse domain notation plugin ID, e.g. org.opencontrol.fiscal.br"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+    },
+    "vendor": {
+      "type": "string"
+    },
+    "minKernelVersion": {
+      "type": "string"
+    },
+    "maxKernelVersion": {
+      "type": "string"
+    },
+    "entryPointClass": {
+      "type": "string",
+      "description": "Optional class implementing PluginLifecycle for custom init/shutdown hooks"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pluginId", "versionRange"],
+        "properties": {
+          "pluginId": { "type": "string" },
+          "versionRange": { "type": "string" },
+          "optional": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "extensions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["extensionPoint", "implementationClass"],
+        "properties": {
+          "extensionPoint": { "type": "string" },
+          "implementationClass": { "type": "string" },
+          "priority": { "type": "integer", "default": 100 },
+          "contextConstraints": { "type": "object" }
+        }
+      }
+    },
+    "eventSubscribers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["eventType", "subscriberClass"],
+        "properties": {
+          "eventType": { "type": "string" },
+          "subscriberClass": { "type": "string" },
+          "mode": {
+            "type": "string",
+            "enum": ["SYNC_PRE_COMMIT", "ASYNC_POST_COMMIT"],
+            "default": "ASYNC_POST_COMMIT"
+          }
+        }
+      }
+    }
+  }
+}

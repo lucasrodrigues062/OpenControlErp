@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: opencontrol-erp-test
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  modulith:
+    events:
+      jdbc-schema-initialization:
+        enabled: false
+
+opencontrol:
+  plugins:
+    storage-directory: build/test-plugins
+    auto-scan: false

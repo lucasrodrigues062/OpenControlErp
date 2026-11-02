@@ -1,0 +1,267 @@
+openapi: 3.0.3
+info:
+  title: OpenControl ERP - Extension & Plugin Management API
+  version: 1.0.0
+  description: Administrative endpoints for managing modular apps, SPI extensions, and event subscribers.
+paths:
+  /api/v1/extensions:
+    get:
+      summary: List all installed and discovered extensions
+      operationId: listExtensions
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [DISCOVERED, INSTALLED, ACTIVE, INACTIVE, ERROR]
+      responses:
+        '200':
+          description: List of extensions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExtensionPluginDto'
+
+    post:
+      summary: Upload and install a new extension package
+      operationId: installExtension
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Plugin ZIP/JAR package
+      responses:
+        '201':
+          description: Extension installed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtensionPluginDto'
+        '400':
+          description: Invalid package manifest or incompatible kernel version
+        '409':
+          description: Plugin with this identifier already exists
+
+  /api/v1/extensions/{id}:
+    get:
+      summary: Get details of a specific extension
+      operationId: getExtension
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Extension details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtensionPluginDto'
+        '404':
+          description: Extension not found
+
+    delete:
+      summary: Uninstall an extension
+      operationId: uninstallExtension
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: purgeData
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '204':
+          description: Extension uninstalled successfully
+        '400':
+          description: Cannot uninstall active extension or extension with active dependents
+
+  /api/v1/extensions/{id}/activate:
+    post:
+      summary: Activate an installed or inactive extension
+      operationId: activateExtension
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Extension successfully activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtensionPluginDto'
+        '400':
+          description: Unmet dependencies or activation hook failure
+
+  /api/v1/extensions/{id}/deactivate:
+    post:
+      summary: Deactivate an active extension
+      operationId: deactivateExtension
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Extension successfully deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtensionPluginDto'
+        '400':
+          description: Cannot deactivate extension while dependents are active
+
+  /api/v1/extensions/events/outbox:
+    get:
+      summary: Inspect domain event outbox status and failed deliveries
+      operationId: listEventOutbox
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, PROCESSING, PUBLISHED, FAILED, DEAD_LETTER]
+      responses:
+        '200':
+          description: Event outbox items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventOutboxDto'
+
+  /api/v1/extensions/events/outbox/{id}/retry:
+    post:
+      summary: Manually retry a failed or dead-letter event
+      operationId: retryEvent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Event queued for immediate retry
+
+components:
+  schemas:
+    ExtensionPluginDto:
+      type: object
+      required:
+        - id
+        - pluginId
+        - name
+        - version
+        - vendor
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        pluginId:
+          type: string
+          example: "org.opencontrol.fiscal.br"
+        name:
+          type: string
+          example: "Brazilian Fiscal Compliance (DFe)"
+        description:
+          type: string
+        version:
+          type: string
+          example: "1.0.0"
+        vendor:
+          type: string
+          example: "OpenControl Community"
+        minKernelVersion:
+          type: string
+          example: "1.0.0"
+        status:
+          type: string
+          enum: [DISCOVERED, INSTALLED, ACTIVE, INACTIVE, ERROR]
+        errorMessage:
+          type: string
+          nullable: true
+        dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtensionDependencyDto'
+        extensionPoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtensionPointDto'
+
+    ExtensionDependencyDto:
+      type: object
+      properties:
+        dependsOnPluginId:
+          type: string
+        versionRange:
+          type: string
+        optional:
+          type: boolean
+
+    ExtensionPointDto:
+      type: object
+      properties:
+        extensionPointInterface:
+          type: string
+          example: "org.opencontrol.erp.fiscal.spi.FiscalEngineSPI"
+        priority:
+          type: integer
+          example: 100
+        contextConstraints:
+          type: object
+
+    EventOutboxDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        eventId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          example: "sales.order.created"
+        aggregateType:
+          type: string
+        aggregateId:
+          type: string
+        status:
+          type: string
+        retryCount:
+          type: integer
+        lastError:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
