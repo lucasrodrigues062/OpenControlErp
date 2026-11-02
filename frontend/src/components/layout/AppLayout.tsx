@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Users, Shield, History, LogOut, LayoutDashboard } from 'lucide-react';
+import { Users, Shield, History, LogOut, LayoutDashboard, AlertCircle } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 
 export const AppLayout: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasPermission } = useAuth();
   const location = useLocation();
 
   const navigation = [
@@ -14,6 +14,10 @@ export const AppLayout: React.FC = () => {
     { name: 'Profiles & Permissions', href: '/profiles', icon: Shield, permission: 'PROFILES_MANAGE' },
     { name: 'Audit Trail', href: '/audit', icon: History, permission: 'AUDIT_READ' },
   ];
+
+  const visibleNavigation = navigation.filter(
+    (item) => !item.permission || hasPermission(item.permission)
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row">
@@ -31,24 +35,31 @@ export const AppLayout: React.FC = () => {
           </div>
 
           <nav className="space-y-1">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.name}
-                </Link>
-              );
-            })}
+            {visibleNavigation.length === 0 ? (
+              <div className="px-3 py-4 text-xs text-slate-400 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-500" />
+                <span>No accessible modules</span>
+              </div>
+            ) : (
+              visibleNavigation.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-primary/10 text-primary font-semibold'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.name}
+                  </Link>
+                );
+              })
+            )}
           </nav>
         </div>
 
@@ -78,7 +89,7 @@ export const AppLayout: React.FC = () => {
           <div className="flex items-center gap-2">
             <LayoutDashboard className="h-4 w-4 text-slate-400" />
             <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-              {navigation.find((n) => n.href === location.pathname)?.name || 'Dashboard'}
+              {visibleNavigation.find((n) => n.href === location.pathname)?.name || 'Dashboard'}
             </span>
           </div>
           <div className="text-xs text-slate-400">Jurisdiction: BR (Federal)</div>
