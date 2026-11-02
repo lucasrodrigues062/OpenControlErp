@@ -66,6 +66,21 @@ class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem)
     }
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException::class)
+    fun handleAccessDeniedException(ex: org.springframework.security.access.AccessDeniedException): ResponseEntity<ProblemDetail> {
+        val problem =
+            ProblemDetail
+                .forStatusAndDetail(
+                    HttpStatus.FORBIDDEN,
+                    ex.message ?: "Access Denied",
+                ).apply {
+                    title = "ACCESS_DENIED"
+                    type = URI.create("https://opencontrol.org/errors/access_denied")
+                    setProperty("timestamp", Instant.now())
+                }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem)
+    }
+
     @ExceptionHandler(Exception::class)
     fun handleGenericException(ex: Exception): ResponseEntity<ProblemDetail> {
         val problem =

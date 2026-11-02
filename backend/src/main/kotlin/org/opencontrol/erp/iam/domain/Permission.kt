@@ -71,6 +71,18 @@ enum class SystemPermission(
         "Manage Custom Fields",
         "Allows creating, editing, and organizing custom field definitions",
     ),
+    COMPANIES_READ(
+        "COMPANIES_READ",
+        "Company Management",
+        "View Companies and Branches",
+        "Allows viewing company and branch details, fiscal settings, and certificate status",
+    ),
+    COMPANIES_MANAGE(
+        "COMPANIES_MANAGE",
+        "Company Management",
+        "Manage Companies and Branches",
+        "Allows creating, updating, and deactivating companies, branches, fiscal settings, and digital certificates",
+    ),
 }
 
 @Embeddable

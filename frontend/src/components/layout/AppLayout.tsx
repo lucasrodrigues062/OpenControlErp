@@ -11,12 +11,14 @@ import {
   AlertCircle,
   Sliders,
   Database,
+  Building2,
   PanelLeftClose,
   PanelLeft,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { LanguageSwitcher } from '../common/LanguageSwitcher';
+import { BranchSwitcher } from '../companies/BranchSwitcher';
 
 export const AppLayout: React.FC = () => {
   const { user, logout, hasPermission } = useAuth();
@@ -36,6 +38,7 @@ export const AppLayout: React.FC = () => {
   };
 
   const navigation = [
+    { nameKey: 'companies.title', defaultName: 'Companies & Branches', href: '/companies', icon: Building2, permission: 'COMPANIES_READ' },
     { nameKey: 'iam.usersTitle', defaultName: 'Users', href: '/users', icon: Users, permission: 'USERS_READ' },
     { nameKey: 'iam.profilesTitle', defaultName: 'Profiles & Permissions', href: '/profiles', icon: Shield, permission: 'PROFILES_MANAGE' },
     { nameKey: 'rules.title', defaultName: 'Custom Rules', href: '/rules', icon: Sliders, permission: 'RULES_READ' },
@@ -177,15 +180,16 @@ export const AppLayout: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <LayoutDashboard className="h-4 w-4 text-slate-400" />
-            <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <LayoutDashboard className="h-4 w-4 text-slate-400 shrink-0" />
+            <span className="text-sm font-medium text-slate-600 dark:text-slate-300 truncate">
               {currentNav ? t(currentNav.nameKey) : t('common.dashboard')}
             </span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-xs text-slate-400 hidden sm:block">{t('common.jurisdiction')}</div>
+          <div className="flex items-center gap-3 shrink-0">
+            <BranchSwitcher />
+            <div className="text-xs text-slate-400 hidden lg:block">{t('common.jurisdiction')}</div>
             <LanguageSwitcher variant="full" />
           </div>
         </header>

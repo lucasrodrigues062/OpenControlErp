@@ -85,6 +85,10 @@ export const CustomFieldsSettingsPage: React.FC = () => {
   const handleSaveField = async (
     req: CreateCustomFieldDefinitionRequest | UpdateCustomFieldDefinitionRequest
   ) => {
+    const target = (req as CreateCustomFieldDefinitionRequest).targetEntity || selectedEntity;
+    if (target !== selectedEntity) {
+      setSelectedEntity(target);
+    }
     if (editingField) {
       await customFieldsApi.updateDefinition(editingField.id, req as UpdateCustomFieldDefinitionRequest);
       showNotification('success', t('customFields', 'saveSuccess'));
@@ -371,6 +375,7 @@ export const CustomFieldsSettingsPage: React.FC = () => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         targetEntity={selectedEntity}
+        entities={entities}
         fieldToEdit={editingField}
         onSave={handleSaveField}
       />

@@ -11,6 +11,7 @@ describe('I18n Catalogs & Formatting Logic', () => {
       audit: Object.keys(enUS.audit).sort(),
       rules: Object.keys(enUS.rules).sort(),
       customFields: Object.keys(enUS.customFields).sort(),
+      companies: Object.keys(enUS.companies).sort(),
     };
 
     const ptKeys = {
@@ -20,6 +21,7 @@ describe('I18n Catalogs & Formatting Logic', () => {
       audit: Object.keys(ptBR.audit).sort(),
       rules: Object.keys(ptBR.rules).sort(),
       customFields: Object.keys(ptBR.customFields).sort(),
+      companies: Object.keys(ptBR.companies).sort(),
     };
 
     expect(ptKeys.common).toEqual(enKeys.common);
@@ -28,6 +30,7 @@ describe('I18n Catalogs & Formatting Logic', () => {
     expect(ptKeys.audit).toEqual(enKeys.audit);
     expect(ptKeys.rules).toEqual(enKeys.rules);
     expect(ptKeys.customFields).toEqual(enKeys.customFields);
+    expect(ptKeys.companies).toEqual(enKeys.companies);
   });
 
   it('should format currency correctly according to locale standard', () => {

@@ -26,6 +26,14 @@ class CustomFieldEntityRegistry {
         // Core standard entities registered by default
         register(
             TargetEntityDescriptor(
+                entityCode = "COMPANY",
+                displayName = "Company / Branch",
+                module = "CORE",
+                description = "Company headquarters and operational branch records",
+            ),
+        )
+        register(
+            TargetEntityDescriptor(
                 entityCode = "CUSTOMER",
                 displayName = "Customer",
                 module = "CRM",

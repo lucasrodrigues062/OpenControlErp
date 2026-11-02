@@ -1,0 +1,606 @@
+openapi: 3.0.3
+info:
+  title: OpenControl ERP - Companies & Branches API
+  version: 1.0.0
+  description: Multi-tenant Company and Branch (Matriz & Filial) management API with Brazilian fiscal profile and certificate support.
+
+paths:
+  /api/v1/companies:
+    get:
+      summary: List companies and branches
+      operationId: listCompanies
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [HEADQUARTERS, BRANCH]
+        - name: activeOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: List of companies and branches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompanyBranchSummaryResponse'
+
+    post:
+      summary: Create a new company or branch
+      operationId: createCompany
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCompanyBranchRequest'
+      responses:
+        '201':
+          description: Created company or branch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyBranchDetailResponse'
+        '400':
+          description: Validation error or duplicate CNPJ
+
+  /api/v1/companies/{id}:
+    get:
+      summary: Get company or branch by ID
+      operationId: getCompanyById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Full company details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyBranchDetailResponse'
+        '404':
+          description: Not found
+
+    put:
+      summary: Update company or branch details
+      operationId: updateCompany
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCompanyBranchRequest'
+      responses:
+        '200':
+          description: Updated company details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyBranchDetailResponse'
+
+  /api/v1/companies/{id}/status:
+    patch:
+      summary: Toggle company or branch active status
+      operationId: toggleCompanyStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Status toggled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyBranchDetailResponse'
+
+  /api/v1/companies/{id}/fiscal-settings:
+    put:
+      summary: Update fiscal settings for a branch
+      operationId: updateFiscalSettings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFiscalSettingsRequest'
+      responses:
+        '200':
+          description: Updated fiscal settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FiscalSettingsResponse'
+
+  /api/v1/companies/{id}/certificate:
+    get:
+      summary: Get certificate metadata for branch
+      operationId: getCertificateMetadata
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Certificate metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificateMetadataResponse'
+        '404':
+          description: No certificate found
+
+    post:
+      summary: Upload A1 digital certificate (.pfx/.p12)
+      operationId: uploadCertificate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, password]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Certificate successfully validated and stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificateMetadataResponse'
+
+    delete:
+      summary: Remove certificate from branch
+      operationId: deleteCertificate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Certificate deleted
+
+  /api/v1/companies/{id}/accountant:
+    put:
+      summary: Update accountant details for branch
+      operationId: updateAccountant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAccountantRequest'
+      responses:
+        '200':
+          description: Updated accountant details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountantResponse'
+
+  /api/v1/companies/user-branches:
+    get:
+      summary: Get branches permitted for the current user
+      operationId: getUserBranches
+      responses:
+        '200':
+          description: List of accessible branches and active branch ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBranchesResponse'
+
+components:
+  schemas:
+    CompanyBranchSummaryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [HEADQUARTERS, BRANCH]
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        code:
+          type: string
+        tradeName:
+          type: string
+        legalName:
+          type: string
+        cnpj:
+          type: string
+        cityName:
+          type: string
+        stateCode:
+          type: string
+        isActive:
+          type: boolean
+        certificateValidUntil:
+          type: string
+          format: date-time
+          nullable: true
+        isCertificateExpired:
+          type: boolean
+
+    CompanyBranchDetailResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [HEADQUARTERS, BRANCH]
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        code:
+          type: string
+        tradeName:
+          type: string
+        legalName:
+          type: string
+        cnpj:
+          type: string
+        stateRegistration:
+          type: string
+        isStateRegistrationExempt:
+          type: boolean
+        municipalRegistration:
+          type: string
+        mainCnae:
+          type: string
+        nfseCnae:
+          type: string
+        phone1:
+          type: string
+        phone2:
+          type: string
+        email:
+          type: string
+        responsiblePerson:
+          type: string
+        website:
+          type: string
+        address:
+          $ref: '#/components/schemas/AddressDto'
+        isActive:
+          type: boolean
+        fiscalSettings:
+          $ref: '#/components/schemas/FiscalSettingsResponse'
+        accountant:
+          $ref: '#/components/schemas/AccountantResponse'
+        certificate:
+          $ref: '#/components/schemas/CertificateMetadataResponse'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateCompanyBranchRequest:
+      type: object
+      required: [type, code, tradeName, legalName, cnpj, cityName, stateCode]
+      properties:
+        type:
+          type: string
+          enum: [HEADQUARTERS, BRANCH]
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        code:
+          type: string
+        tradeName:
+          type: string
+        legalName:
+          type: string
+        cnpj:
+          type: string
+        stateRegistration:
+          type: string
+        isStateRegistrationExempt:
+          type: boolean
+          default: false
+        municipalRegistration:
+          type: string
+        mainCnae:
+          type: string
+        nfseCnae:
+          type: string
+        phone1:
+          type: string
+        phone2:
+          type: string
+        email:
+          type: string
+        responsiblePerson:
+          type: string
+        website:
+          type: string
+        address:
+          $ref: '#/components/schemas/AddressDto'
+
+    UpdateCompanyBranchRequest:
+      type: object
+      required: [tradeName, legalName, cityName, stateCode]
+      properties:
+        tradeName:
+          type: string
+        legalName:
+          type: string
+        stateRegistration:
+          type: string
+        isStateRegistrationExempt:
+          type: boolean
+        municipalRegistration:
+          type: string
+        mainCnae:
+          type: string
+        nfseCnae:
+          type: string
+        phone1:
+          type: string
+        phone2:
+          type: string
+        email:
+          type: string
+        responsiblePerson:
+          type: string
+        website:
+          type: string
+        address:
+          $ref: '#/components/schemas/AddressDto'
+
+    AddressDto:
+      type: object
+      properties:
+        postalCode:
+          type: string
+        street:
+          type: string
+        number:
+          type: string
+        complement:
+          type: string
+        neighborhood:
+          type: string
+        cityName:
+          type: string
+        cityIbgeCode:
+          type: integer
+        stateCode:
+          type: string
+        countryCode:
+          type: string
+          default: BRA
+
+    FiscalSettingsResponse:
+      type: object
+      properties:
+        taxRegime:
+          type: string
+          enum: [SIMPLES_NACIONAL, SIMPLES_EXCESSO_SUBLIMITE, REGIME_NORMAL]
+        pisCofinsRegime:
+          type: string
+          enum: [CUMULATIVO, NAO_CUMULATIVO]
+        isTaxSubstitute:
+          type: boolean
+        isIpiTaxpayer:
+          type: boolean
+        isCulturalPromoter:
+          type: boolean
+        calculateFcp:
+          type: boolean
+        deductIcmsFromPiscofinsBasis:
+          type: boolean
+        icmsSnCreditRate:
+          type: number
+        issRate:
+          type: number
+        cbsRate:
+          type: number
+        nfeEnvironment:
+          type: string
+          enum: [HOMOLOGATION, PRODUCTION]
+        nfeSeries:
+          type: string
+        nfeModel:
+          type: string
+        nfseSeries:
+          type: string
+        mdfeSeries:
+          type: string
+        defaultInvoiceMessage:
+          type: string
+        danfeLayout:
+          type: string
+          enum: [PORTRAIT, LANDSCAPE]
+
+    UpdateFiscalSettingsRequest:
+      type: object
+      properties:
+        taxRegime:
+          type: string
+          enum: [SIMPLES_NACIONAL, SIMPLES_EXCESSO_SUBLIMITE, REGIME_NORMAL]
+        pisCofinsRegime:
+          type: string
+          enum: [CUMULATIVO, NAO_CUMULATIVO]
+        isTaxSubstitute:
+          type: boolean
+        isIpiTaxpayer:
+          type: boolean
+        isCulturalPromoter:
+          type: boolean
+        calculateFcp:
+          type: boolean
+        deductIcmsFromPiscofinsBasis:
+          type: boolean
+        icmsSnCreditRate:
+          type: number
+        issRate:
+          type: number
+        cbsRate:
+          type: number
+        nfeEnvironment:
+          type: string
+          enum: [HOMOLOGATION, PRODUCTION]
+        nfeSeries:
+          type: string
+        nfeModel:
+          type: string
+        nfseSeries:
+          type: string
+        mdfeSeries:
+          type: string
+        defaultInvoiceMessage:
+          type: string
+        danfeLayout:
+          type: string
+          enum: [PORTRAIT, LANDSCAPE]
+
+    CertificateMetadataResponse:
+      type: object
+      properties:
+        certificateType:
+          type: string
+        serialNumber:
+          type: string
+        subjectName:
+          type: string
+        issuerName:
+          type: string
+        cnpj:
+          type: string
+        validFrom:
+          type: string
+          format: date-time
+        validUntil:
+          type: string
+          format: date-time
+        isExpired:
+          type: boolean
+        daysUntilExpiration:
+          type: integer
+
+    AccountantResponse:
+      type: object
+      properties:
+        name:
+          type: string
+        cpf:
+          type: string
+        crc:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        postalCode:
+          type: string
+        street:
+          type: string
+        number:
+          type: string
+        neighborhood:
+          type: string
+        cityName:
+          type: string
+        stateCode:
+          type: string
+
+    UpdateAccountantRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        cpf:
+          type: string
+        crc:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        postalCode:
+          type: string
+        street:
+          type: string
+        number:
+          type: string
+        neighborhood:
+          type: string
+        cityName:
+          type: string
+        stateCode:
+          type: string
+
+    UserBranchesResponse:
+      type: object
+      properties:
+        activeBranchId:
+          type: string
+          format: uuid
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompanyBranchSummaryResponse'

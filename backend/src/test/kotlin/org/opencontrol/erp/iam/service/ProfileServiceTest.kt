@@ -61,18 +61,22 @@ class ProfileServiceTest {
     }
 
     @Test
-    fun `should reject duplicate profile name in same tenant`() {
+    fun `should throw exception when profile name already exists`() {
         every { profileRepository.existsByTenantIdAndName(tenantId, "Finance") } returns true
 
         assertThrows<PluginConflictException> {
-            profileService.createProfile("Finance", null, emptySet())
+            profileService.createProfile(
+                name = "Finance",
+                description = "Finance team",
+                permissions = setOf("USERS_READ"),
+            )
         }
     }
 
     @Test
-    fun `should prevent deleting profile when users are assigned`() {
+    fun `should throw exception when deleting profile with assigned users`() {
         val profileId = UUID.randomUUID()
-        val profile = Profile(id = profileId, tenantId = tenantId, name = "Sales", isSystem = false)
+        val profile = Profile(id = profileId, tenantId = tenantId, name = "Finance", isSystem = false)
 
         every { profileRepository.findById(profileId) } returns Optional.of(profile)
         every { userRepository.countByProfileId(profileId) } returns 3L
@@ -81,11 +85,11 @@ class ProfileServiceTest {
             assertThrows<IllegalStateException> {
                 profileService.deleteProfile(profileId)
             }
-        assertEquals("Cannot delete profile 'Sales' because it has 3 assigned user(s)", exception.message)
+        assertEquals("Cannot delete profile 'Finance' because it has 3 assigned user(s)", exception.message)
     }
 
     @Test
-    fun `should prevent deleting system profile`() {
+    fun `should throw exception when deleting system profile`() {
         val profileId = UUID.randomUUID()
         val profile = Profile(id = profileId, tenantId = tenantId, name = "Administrator", isSystem = true)
 
@@ -139,6 +143,6 @@ class ProfileServiceTest {
 
         assertEquals(1, list.size)
         assertEquals(profile.id, fetched.id)
-        assertEquals(9, catalog.size)
+        assertEquals(11, catalog.size)
     }
 }

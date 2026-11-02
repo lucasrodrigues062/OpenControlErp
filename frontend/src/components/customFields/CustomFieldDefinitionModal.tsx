@@ -5,6 +5,7 @@ import {
   CreateCustomFieldDefinitionRequest,
   UpdateCustomFieldDefinitionRequest,
   FieldType,
+  TargetEntityDescriptor,
 } from '../../types/customFields';
 import { useI18n } from '../../context/I18nContext';
 
@@ -12,6 +13,7 @@ interface CustomFieldDefinitionModalProps {
   isOpen: boolean;
   onClose: () => void;
   targetEntity: string;
+  entities?: TargetEntityDescriptor[];
   fieldToEdit?: CustomFieldDefinition | null;
   onSave: (
     req: CreateCustomFieldDefinitionRequest | UpdateCustomFieldDefinitionRequest
@@ -22,11 +24,13 @@ export const CustomFieldDefinitionModal: React.FC<CustomFieldDefinitionModalProp
   isOpen,
   onClose,
   targetEntity,
+  entities,
   fieldToEdit,
   onSave,
 }) => {
   const { t } = useI18n();
 
+  const [targetEntityState, setTargetEntityState] = useState(targetEntity);
   const [fieldKey, setFieldKey] = useState('');
   const [label, setLabel] = useState('');
   const [description, setDescription] = useState('');
@@ -45,6 +49,7 @@ export const CustomFieldDefinitionModal: React.FC<CustomFieldDefinitionModalProp
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    setTargetEntityState(targetEntity);
     if (fieldToEdit) {
       setFieldKey(fieldToEdit.fieldKey);
       setLabel(fieldToEdit.label);
@@ -136,7 +141,7 @@ export const CustomFieldDefinitionModal: React.FC<CustomFieldDefinitionModalProp
         await onSave(updatePayload);
       } else {
         const createPayload: CreateCustomFieldDefinitionRequest = {
-          targetEntity,
+          targetEntity: targetEntityState || targetEntity,
           fieldKey: fieldKey.trim().toLowerCase(),
           label: label.trim(),
           description: description.trim() || undefined,
@@ -187,6 +192,25 @@ export const CustomFieldDefinitionModal: React.FC<CustomFieldDefinitionModalProp
             </div>
           )}
 
+          {/* Target Entity Selection (when creating) */}
+          {!fieldToEdit && entities && entities.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                {t('customFields', 'targetEntity')} *
+              </label>
+              <select
+                value={targetEntityState}
+                onChange={(e) => setTargetEntityState(e.target.value)}
+                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              >
+                {entities.map((ent) => (
+                  <option key={ent.entityCode} value={ent.entityCode}>
+                    {ent.displayName} ({ent.entityCode})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">

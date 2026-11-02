@@ -171,4 +171,5 @@ export interface TranslationDictionary {
   audit: AuditTranslations;
   rules: RulesTranslations;
   customFields: import('../locales/en-US/customFields').CustomFieldsTranslations;
+  companies: import('../locales/en-US/companies').CompaniesTranslations;
 }
