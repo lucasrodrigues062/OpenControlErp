@@ -25,7 +25,6 @@ import kotlin.test.assertNotNull
 @SpringBootTest
 @ActiveProfiles("test")
 class QuickstartEndToEndTest {
-
     @Autowired
     private lateinit var pluginLifecycleService: PluginLifecycleService
 
@@ -48,14 +47,15 @@ class QuickstartEndToEndTest {
     fun `execute end-to-end quickstart scenarios`() {
         // Scenario 1: Plugin Lifecycle Management
         val uniquePluginId = "org.opencontrol.quickstart.app-${UUID.randomUUID().toString().take(8)}"
-        val testPlugin = ExtensionPlugin(
-            pluginId = uniquePluginId,
-            name = "Quickstart App",
-            version = "1.0.0",
-            vendor = "OpenControl Core",
-            minKernelVersion = "1.0.0",
-            status = PluginStatus.ACTIVE,
-        )
+        val testPlugin =
+            ExtensionPlugin(
+                pluginId = uniquePluginId,
+                name = "Quickstart App",
+                version = "1.0.0",
+                vendor = "OpenControl Core",
+                minKernelVersion = "1.0.0",
+                status = PluginStatus.ACTIVE,
+            )
         val saved = pluginRepository.save(testPlugin)
         val deactivated = pluginLifecycleService.deactivate(saved.id)
         assertEquals(PluginStatus.INACTIVE, deactivated.status)
@@ -68,10 +68,11 @@ class QuickstartEndToEndTest {
         assertEquals("SIMULATED", docResult.status)
 
         // Scenario 3: Transactional Outbox Event Dispatch
-        val event = TestOrderCreatedEvent(
-            eventId = UUID.randomUUID(),
-            totalAmount = 1500.0,
-        )
+        val event =
+            TestOrderCreatedEvent(
+                eventId = UUID.randomUUID(),
+                totalAmount = 1500.0,
+            )
         domainEventPublisher.publish(event)
         val outboxItem = eventOutboxRepository.findByEventId(event.eventId)
         assertNotNull(outboxItem)

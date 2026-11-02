@@ -2,7 +2,6 @@ package org.opencontrol.erp.kernel.plugin.loader
 
 import java.io.Closeable
 import java.io.File
-import java.net.URL
 import java.net.URLClassLoader
 
 /**
@@ -13,10 +12,8 @@ import java.net.URLClassLoader
 class PluginClassLoader(
     val pluginId: String,
     jarFile: File,
-    parent: ClassLoader = PluginClassLoader::class.java.classLoader
-) : URLClassLoader(arrayOf(jarFile.toURI().toURL()), parent), Closeable {
-
-    override fun toString(): String {
-        return "PluginClassLoader(pluginId='$pluginId', urls=${urLs.joinToString()})"
-    }
+    parent: ClassLoader = PluginClassLoader::class.java.classLoader,
+) : URLClassLoader(arrayOf(jarFile.toURI().toURL()), parent),
+    Closeable {
+    override fun toString(): String = "PluginClassLoader(pluginId='$pluginId', urls=${urLs.joinToString()})"
 }

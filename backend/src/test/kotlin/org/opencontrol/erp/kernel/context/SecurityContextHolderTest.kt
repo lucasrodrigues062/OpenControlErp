@@ -1,12 +1,17 @@
 package org.opencontrol.erp.kernel.context
 
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class SecurityContextHolderTest {
+    @BeforeEach
+    fun setUp() {
+        SecurityContextHolder.clearContext()
+    }
 
     @AfterEach
     fun tearDown() {

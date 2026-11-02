@@ -17,24 +17,18 @@ import java.util.UUID
 class ExtensionPointRegistration(
     @Id
     val id: UUID = UUID.randomUUID(),
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plugin_fk", nullable = false)
     val plugin: ExtensionPlugin,
-
     @Column(name = "extension_point_interface", nullable = false, length = 255)
     val extensionPointInterface: String,
-
     @Column(name = "implementation_class", nullable = false, length = 255)
     val implementationClass: String,
-
     @Column(nullable = false)
     val priority: Int = 100,
-
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "context_constraints", columnDefinition = "jsonb")
     val contextConstraints: String? = null,
-
     @Column(nullable = false)
     var active: Boolean = true,
 )

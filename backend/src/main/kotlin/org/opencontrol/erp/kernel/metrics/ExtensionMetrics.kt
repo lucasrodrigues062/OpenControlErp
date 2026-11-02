@@ -13,9 +13,8 @@ import org.springframework.stereotype.Component
 class ExtensionMetrics(
     private val meterRegistry: MeterRegistry,
     private val pluginRepository: ExtensionPluginRepository,
-    private val outboxRepository: EventOutboxRepository
+    private val outboxRepository: EventOutboxRepository,
 ) {
-
     @Scheduled(fixedRate = 10000)
     fun recordMetrics() {
         val activePlugins = pluginRepository.findAllByStatus(PluginStatus.ACTIVE).size.toDouble()

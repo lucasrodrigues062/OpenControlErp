@@ -14,7 +14,6 @@ import java.util.UUID
 import kotlin.test.assertEquals
 
 class ExtensionMetricsTest {
-
     private val meterRegistry = SimpleMeterRegistry()
     private val pluginRepository = mockk<ExtensionPluginRepository>(relaxed = true)
     private val outboxRepository = mockk<EventOutboxRepository>(relaxed = true)
@@ -23,23 +22,25 @@ class ExtensionMetricsTest {
 
     @Test
     fun `should register and update plugin and outbox gauges`() {
-        val activePlugin = ExtensionPlugin(
-            pluginId = "plugin.1",
-            name = "Active",
-            version = "1.0.0",
-            vendor = "V",
-            minKernelVersion = "1.0.0",
-            status = PluginStatus.ACTIVE
-        )
-        val pendingOutbox = EventOutbox(
-            eventId = UUID.randomUUID(),
-            eventType = "e",
-            aggregateType = "A",
-            aggregateId = "1",
-            tenantId = UUID.randomUUID(),
-            payload = "{}",
-            status = OutboxStatus.PENDING
-        )
+        val activePlugin =
+            ExtensionPlugin(
+                pluginId = "plugin.1",
+                name = "Active",
+                version = "1.0.0",
+                vendor = "V",
+                minKernelVersion = "1.0.0",
+                status = PluginStatus.ACTIVE,
+            )
+        val pendingOutbox =
+            EventOutbox(
+                eventId = UUID.randomUUID(),
+                eventType = "e",
+                aggregateType = "A",
+                aggregateId = "1",
+                tenantId = UUID.randomUUID(),
+                payload = "{}",
+                status = OutboxStatus.PENDING,
+            )
 
         every { pluginRepository.findAllByStatus(PluginStatus.ACTIVE) } returns listOf(activePlugin)
         every { pluginRepository.findAllByStatus(PluginStatus.ERROR) } returns emptyList()

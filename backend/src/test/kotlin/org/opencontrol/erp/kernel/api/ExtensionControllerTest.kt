@@ -13,20 +13,20 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class ExtensionControllerTest {
-
     private val service = mockk<PluginLifecycleService>(relaxed = true)
     private val controller = ExtensionController(service)
 
     @Test
     fun `listExtensions should return 200 with mapped DTOs`() {
-        val plugin = ExtensionPlugin(
-            pluginId = "org.opencontrol.test",
-            name = "Test Plugin",
-            version = "1.0.0",
-            vendor = "OpenControl",
-            minKernelVersion = "1.0.0",
-            status = PluginStatus.ACTIVE
-        )
+        val plugin =
+            ExtensionPlugin(
+                pluginId = "org.opencontrol.test",
+                name = "Test Plugin",
+                version = "1.0.0",
+                vendor = "OpenControl",
+                minKernelVersion = "1.0.0",
+                status = PluginStatus.ACTIVE,
+            )
 
         every { service.list(PluginStatus.ACTIVE) } returns listOf(plugin)
 
@@ -41,15 +41,16 @@ class ExtensionControllerTest {
     @Test
     fun `activateExtension should return 200 with activated status`() {
         val id = UUID.randomUUID()
-        val plugin = ExtensionPlugin(
-            id = id,
-            pluginId = "org.opencontrol.test",
-            name = "Test Plugin",
-            version = "1.0.0",
-            vendor = "OpenControl",
-            minKernelVersion = "1.0.0",
-            status = PluginStatus.ACTIVE
-        )
+        val plugin =
+            ExtensionPlugin(
+                id = id,
+                pluginId = "org.opencontrol.test",
+                name = "Test Plugin",
+                version = "1.0.0",
+                vendor = "OpenControl",
+                minKernelVersion = "1.0.0",
+                status = PluginStatus.ACTIVE,
+            )
 
         every { service.activate(id) } returns plugin
 
@@ -63,15 +64,16 @@ class ExtensionControllerTest {
     @Test
     fun `deactivateExtension should return 200 with inactive status`() {
         val id = UUID.randomUUID()
-        val plugin = ExtensionPlugin(
-            id = id,
-            pluginId = "org.opencontrol.test",
-            name = "Test Plugin",
-            version = "1.0.0",
-            vendor = "OpenControl",
-            minKernelVersion = "1.0.0",
-            status = PluginStatus.INACTIVE
-        )
+        val plugin =
+            ExtensionPlugin(
+                id = id,
+                pluginId = "org.opencontrol.test",
+                name = "Test Plugin",
+                version = "1.0.0",
+                vendor = "OpenControl",
+                minKernelVersion = "1.0.0",
+                status = PluginStatus.INACTIVE,
+            )
 
         every { service.deactivate(id) } returns plugin
 

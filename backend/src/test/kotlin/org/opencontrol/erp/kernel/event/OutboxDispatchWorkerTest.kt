@@ -2,7 +2,6 @@ package org.opencontrol.erp.kernel.event
 
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.opencontrol.erp.kernel.event.domain.EventOutbox
 import org.opencontrol.erp.kernel.event.domain.OutboxStatus
@@ -14,21 +13,21 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class OutboxDispatchWorkerTest {
-
     private val eventOutboxRepository = mockk<EventOutboxRepository>(relaxed = true)
     private val worker = OutboxDispatchWorker(eventOutboxRepository)
 
     @Test
     fun `processEvent should transition outbox to PUBLISHED on success`() {
-        val outbox = EventOutbox(
-            eventId = UUID.randomUUID(),
-            eventType = "test.event",
-            aggregateType = "Test",
-            aggregateId = "1",
-            tenantId = UUID.randomUUID(),
-            payload = "{}",
-            status = OutboxStatus.PENDING
-        )
+        val outbox =
+            EventOutbox(
+                eventId = UUID.randomUUID(),
+                eventType = "test.event",
+                aggregateType = "Test",
+                aggregateId = "1",
+                tenantId = UUID.randomUUID(),
+                payload = "{}",
+                status = OutboxStatus.PENDING,
+            )
 
         every { eventOutboxRepository.save(any()) } answers { firstArg() }
 
@@ -41,16 +40,17 @@ class OutboxDispatchWorkerTest {
 
     @Test
     fun `processEvent should transition to DEAD_LETTER when retryCount reaches MAX_RETRIES`() {
-        val outbox = EventOutbox(
-            eventId = UUID.randomUUID(),
-            eventType = "test.failing.event",
-            aggregateType = "Test",
-            aggregateId = "1",
-            tenantId = UUID.randomUUID(),
-            payload = "{}",
-            status = OutboxStatus.FAILED,
-            retryCount = OutboxDispatchWorker.MAX_RETRIES - 1
-        )
+        val outbox =
+            EventOutbox(
+                eventId = UUID.randomUUID(),
+                eventType = "test.failing.event",
+                aggregateType = "Test",
+                aggregateId = "1",
+                tenantId = UUID.randomUUID(),
+                payload = "{}",
+                status = OutboxStatus.FAILED,
+                retryCount = OutboxDispatchWorker.MAX_RETRIES - 1,
+            )
 
         // Make save fail when attempting to set PROCESSING to simulate failure
         var callCount = 0

@@ -20,6 +20,16 @@ The OpenControl ERP Backend is an enterprise-grade Modular Monolith built with *
    - Asynchronous post-commit dispatch backed by PostgreSQL `event_outbox` table.
    - Automatic exponential backoff retries and Dead-Letter Queue (DLQ) isolation.
 
+4. **Identity & Access Management (IAM - Single-Profile RBAC)**:
+   - User account lifecycle with cryptographic BCrypt password hashing.
+   - Strict 1:N relationship from `Profile` to `User` (a user belongs to exactly one profile).
+   - Granular system permission catalog (`USERS_READ`, `USERS_WRITE`, `PROFILES_MANAGE`, `AUDIT_READ`).
+   - Stateless JWT authentication filter with claim extraction into `SecurityContextHolder`.
+
+5. **Unified Audit Trail**:
+   - Immutable, append-only `audit_log` table storing actor identity, action type, entity type/ID, and timestamp.
+   - Transaction-bound capture of before and after snapshots in PostgreSQL `JSONB`.
+
 ## Building and Running
 
 ```bash

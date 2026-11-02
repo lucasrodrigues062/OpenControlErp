@@ -5,7 +5,7 @@ enum class PluginStatus {
     INSTALLED,
     ACTIVE,
     INACTIVE,
-    ERROR
+    ERROR,
 }
 
 enum class PluginAction {
@@ -14,5 +14,5 @@ enum class PluginAction {
     DEACTIVATE,
     UNINSTALL,
     CONFIG_CHANGE,
-    ERROR
+    ERROR,
 }

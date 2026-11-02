@@ -8,7 +8,6 @@ import org.opencontrol.erp.kernel.event.worker.OutboxDispatchWorker
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
-import java.time.Instant
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -16,7 +15,6 @@ import kotlin.test.assertNotNull
 @SpringBootTest
 @ActiveProfiles("test")
 class EventOutboxIntegrationTest {
-
     @Autowired
     private lateinit var domainEventPublisher: DomainEventPublisher
 
@@ -28,10 +26,11 @@ class EventOutboxIntegrationTest {
 
     @Test
     fun `should persist event in outbox and dispatch asynchronously`() {
-        val event = TestOrderCreatedEvent(
-            eventId = UUID.randomUUID(),
-            totalAmount = 250.0
-        )
+        val event =
+            TestOrderCreatedEvent(
+                eventId = UUID.randomUUID(),
+                totalAmount = 250.0,
+            )
 
         domainEventPublisher.publish(event)
 

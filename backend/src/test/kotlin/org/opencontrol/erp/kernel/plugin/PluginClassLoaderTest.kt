@@ -12,9 +12,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class PluginClassLoaderTest {
-
     @Test
-    fun `should load resource from plugin jar file`(@TempDir tempDir: File) {
+    fun `should load resource from plugin jar file`(
+        @TempDir tempDir: File,
+    ) {
         val jarFile = File(tempDir, "test-plugin.jar")
         JarOutputStream(FileOutputStream(jarFile)).use { jos ->
             jos.putNextEntry(JarEntry("test-resource.txt"))

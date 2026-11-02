@@ -22,24 +22,27 @@ data class TestOrderCreatedEvent(
 ) : DomainEvent
 
 class PreCommitInterceptorTest {
-
     private val eventOutboxRepository = mockk<EventOutboxRepository>(relaxed = true)
     private val springEventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
-    private val objectMapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
+    private val objectMapper =
+        com.fasterxml.jackson.module.kotlin
+            .jacksonObjectMapper()
 
-    private val publisher = DomainEventPublisher(
-        eventOutboxRepository = eventOutboxRepository,
-        springEventPublisher = springEventPublisher,
-        objectMapper = objectMapper
-    )
+    private val publisher =
+        DomainEventPublisher(
+            eventOutboxRepository = eventOutboxRepository,
+            springEventPublisher = springEventPublisher,
+            objectMapper = objectMapper,
+        )
 
     @Test
     fun `should abort transaction when pre-commit hook throws validation exception`() {
-        val blockingHook = PreCommitInterceptor<TestOrderCreatedEvent> { event ->
-            if (event.totalAmount <= 0) {
-                throw PluginValidationException("Order amount must be greater than zero")
+        val blockingHook =
+            PreCommitInterceptor<TestOrderCreatedEvent> { event ->
+                if (event.totalAmount <= 0) {
+                    throw PluginValidationException("Order amount must be greater than zero")
+                }
             }
-        }
 
         publisher.registerPreCommitInterceptor(blockingHook)
 

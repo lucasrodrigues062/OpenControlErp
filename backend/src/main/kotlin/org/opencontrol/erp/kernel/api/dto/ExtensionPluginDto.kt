@@ -26,25 +26,27 @@ data class ExtensionPluginDto(
     val updatedAt: Instant,
 ) {
     companion object {
-        fun fromEntity(entity: ExtensionPlugin): ExtensionPluginDto = ExtensionPluginDto(
-            id = entity.id,
-            pluginId = entity.pluginId,
-            name = entity.name,
-            description = entity.description,
-            version = entity.version,
-            vendor = entity.vendor,
-            minKernelVersion = entity.minKernelVersion,
-            status = entity.status,
-            errorMessage = entity.errorMessage,
-            dependencies = entity.dependencies.map {
-                ExtensionDependencyDto(
-                    dependsOnPluginId = it.dependsOnPluginId,
-                    versionRange = it.versionRange,
-                    optional = it.optional,
-                )
-            },
-            createdAt = entity.createdAt,
-            updatedAt = entity.updatedAt,
-        )
+        fun fromEntity(entity: ExtensionPlugin): ExtensionPluginDto =
+            ExtensionPluginDto(
+                id = entity.id,
+                pluginId = entity.pluginId,
+                name = entity.name,
+                description = entity.description,
+                version = entity.version,
+                vendor = entity.vendor,
+                minKernelVersion = entity.minKernelVersion,
+                status = entity.status,
+                errorMessage = entity.errorMessage,
+                dependencies =
+                    entity.dependencies.map {
+                        ExtensionDependencyDto(
+                            dependsOnPluginId = it.dependsOnPluginId,
+                            versionRange = it.versionRange,
+                            optional = it.optional,
+                        )
+                    },
+                createdAt = entity.createdAt,
+                updatedAt = entity.updatedAt,
+            )
     }
 }

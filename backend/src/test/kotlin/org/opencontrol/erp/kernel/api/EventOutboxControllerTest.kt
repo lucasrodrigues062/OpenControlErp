@@ -15,22 +15,22 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class EventOutboxControllerTest {
-
     private val repository = mockk<EventOutboxRepository>(relaxed = true)
     private val worker = mockk<OutboxDispatchWorker>(relaxed = true)
     private val controller = EventOutboxController(repository, worker)
 
     @Test
     fun `listEventOutbox should return mapped outbox dtos`() {
-        val outbox = EventOutbox(
-            eventId = UUID.randomUUID(),
-            eventType = "order.created",
-            aggregateType = "Order",
-            aggregateId = "123",
-            tenantId = UUID.randomUUID(),
-            payload = "{}",
-            status = OutboxStatus.PENDING
-        )
+        val outbox =
+            EventOutbox(
+                eventId = UUID.randomUUID(),
+                eventType = "order.created",
+                aggregateType = "Order",
+                aggregateId = "123",
+                tenantId = UUID.randomUUID(),
+                payload = "{}",
+                status = OutboxStatus.PENDING,
+            )
 
         every { repository.findAllByStatus(OutboxStatus.PENDING) } returns listOf(outbox)
 
@@ -45,16 +45,17 @@ class EventOutboxControllerTest {
     @Test
     fun `retryEvent should reset status and trigger worker dispatch`() {
         val id = UUID.randomUUID()
-        val outbox = EventOutbox(
-            id = id,
-            eventId = UUID.randomUUID(),
-            eventType = "order.created",
-            aggregateType = "Order",
-            aggregateId = "123",
-            tenantId = UUID.randomUUID(),
-            payload = "{}",
-            status = OutboxStatus.FAILED
-        )
+        val outbox =
+            EventOutbox(
+                id = id,
+                eventId = UUID.randomUUID(),
+                eventType = "order.created",
+                aggregateType = "Order",
+                aggregateId = "123",
+                tenantId = UUID.randomUUID(),
+                payload = "{}",
+                status = OutboxStatus.FAILED,
+            )
 
         every { repository.findById(id) } returns Optional.of(outbox)
         every { repository.save(any()) } answers { firstArg() }

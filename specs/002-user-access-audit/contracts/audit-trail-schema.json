@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AuditTrailEventPayload",
+  "type": "object",
+  "required": [
+    "eventId",
+    "tenantId",
+    "actorUsername",
+    "action",
+    "entityType",
+    "entityId",
+    "timestamp"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tenantId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "actorId": {
+      "type": ["string", "null"],
+      "format": "uuid"
+    },
+    "actorUsername": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string",
+      "enum": ["CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT"]
+    },
+    "entityType": {
+      "type": "string"
+    },
+    "entityId": {
+      "type": "string"
+    },
+    "details": {
+      "type": ["string", "null"]
+    },
+    "stateBefore": {
+      "type": ["object", "null"]
+    },
+    "stateAfter": {
+      "type": ["object", "null"]
+    },
+    "clientIp": {
+      "type": ["string", "null"]
+    },
+    "userAgent": {
+      "type": ["string", "null"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

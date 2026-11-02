@@ -23,7 +23,6 @@ import java.util.UUID
 import kotlin.test.assertEquals
 
 class PluginLifecycleServiceTest {
-
     private val pluginRepository = mockk<ExtensionPluginRepository>(relaxed = true)
     private val auditLogRepository = mockk<ExtensionAuditLogRepository>(relaxed = true)
     private val manifestParser = mockk<ManifestParser>(relaxed = true)
@@ -31,14 +30,15 @@ class PluginLifecycleServiceTest {
     private val applicationContext = mockk<ApplicationContext>(relaxed = true)
     private val extensionRegistry = mockk<ExtensionRegistry>(relaxed = true)
 
-    private val service = PluginLifecycleService(
-        pluginRepository = pluginRepository,
-        auditLogRepository = auditLogRepository,
-        manifestParser = manifestParser,
-        dependencyResolver = dependencyResolver,
-        applicationContext = applicationContext,
-        extensionRegistry = extensionRegistry,
-    )
+    private val service =
+        PluginLifecycleService(
+            pluginRepository = pluginRepository,
+            auditLogRepository = auditLogRepository,
+            manifestParser = manifestParser,
+            dependencyResolver = dependencyResolver,
+            applicationContext = applicationContext,
+            extensionRegistry = extensionRegistry,
+        )
 
     @BeforeEach
     fun setUp() {
@@ -48,15 +48,16 @@ class PluginLifecycleServiceTest {
     @Test
     fun `activate should return existing plugin if already active`() {
         val pluginId = UUID.randomUUID()
-        val plugin = ExtensionPlugin(
-            id = pluginId,
-            pluginId = "org.opencontrol.sample",
-            name = "Sample",
-            version = "1.0.0",
-            vendor = "OpenControl",
-            minKernelVersion = "1.0.0",
-            status = PluginStatus.ACTIVE,
-        )
+        val plugin =
+            ExtensionPlugin(
+                id = pluginId,
+                pluginId = "org.opencontrol.sample",
+                name = "Sample",
+                version = "1.0.0",
+                vendor = "OpenControl",
+                minKernelVersion = "1.0.0",
+                status = PluginStatus.ACTIVE,
+            )
 
         every { pluginRepository.findById(pluginId) } returns Optional.of(plugin)
 
@@ -68,16 +69,17 @@ class PluginLifecycleServiceTest {
     @Test
     fun `activate should transition to ERROR when archive file is missing`() {
         val pluginId = UUID.randomUUID()
-        val plugin = ExtensionPlugin(
-            id = pluginId,
-            pluginId = "org.opencontrol.missing",
-            name = "Missing",
-            version = "1.0.0",
-            vendor = "OpenControl",
-            minKernelVersion = "1.0.0",
-            status = PluginStatus.INSTALLED,
-            filePath = "non-existent-path.jar",
-        )
+        val plugin =
+            ExtensionPlugin(
+                id = pluginId,
+                pluginId = "org.opencontrol.missing",
+                name = "Missing",
+                version = "1.0.0",
+                vendor = "OpenControl",
+                minKernelVersion = "1.0.0",
+                status = PluginStatus.INSTALLED,
+                filePath = "non-existent-path.jar",
+            )
 
         every { pluginRepository.findById(pluginId) } returns Optional.of(plugin)
         every { pluginRepository.findAll() } returns listOf(plugin)
@@ -94,15 +96,16 @@ class PluginLifecycleServiceTest {
     @Test
     fun `deactivate should return existing plugin if not active`() {
         val pluginId = UUID.randomUUID()
-        val plugin = ExtensionPlugin(
-            id = pluginId,
-            pluginId = "org.opencontrol.inactive",
-            name = "Inactive",
-            version = "1.0.0",
-            vendor = "OpenControl",
-            minKernelVersion = "1.0.0",
-            status = PluginStatus.INACTIVE,
-        )
+        val plugin =
+            ExtensionPlugin(
+                id = pluginId,
+                pluginId = "org.opencontrol.inactive",
+                name = "Inactive",
+                version = "1.0.0",
+                vendor = "OpenControl",
+                minKernelVersion = "1.0.0",
+                status = PluginStatus.INACTIVE,
+            )
 
         every { pluginRepository.findById(pluginId) } returns Optional.of(plugin)
 
@@ -113,15 +116,16 @@ class PluginLifecycleServiceTest {
     @Test
     fun `deactivate should unregister SPIs and set status to INACTIVE`() {
         val pluginId = UUID.randomUUID()
-        val plugin = ExtensionPlugin(
-            id = pluginId,
-            pluginId = "org.opencontrol.to-deactivate",
-            name = "Active Plugin",
-            version = "1.0.0",
-            vendor = "OpenControl",
-            minKernelVersion = "1.0.0",
-            status = PluginStatus.ACTIVE,
-        )
+        val plugin =
+            ExtensionPlugin(
+                id = pluginId,
+                pluginId = "org.opencontrol.to-deactivate",
+                name = "Active Plugin",
+                version = "1.0.0",
+                vendor = "OpenControl",
+                minKernelVersion = "1.0.0",
+                status = PluginStatus.ACTIVE,
+            )
 
         every { pluginRepository.findById(pluginId) } returns Optional.of(plugin)
         every { pluginRepository.findAllByStatus(PluginStatus.ACTIVE) } returns listOf(plugin)

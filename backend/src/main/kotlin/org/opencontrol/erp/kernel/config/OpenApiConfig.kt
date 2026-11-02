@@ -9,10 +9,9 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class OpenApiConfig {
-
     @Bean
-    fun openControlOpenAPI(): OpenAPI {
-        return OpenAPI()
+    fun openControlOpenAPI(): OpenAPI =
+        OpenAPI()
             .info(
                 Info()
                     .title("OpenControl ERP - Kernel API")
@@ -21,13 +20,11 @@ class OpenApiConfig {
                     .contact(
                         Contact()
                             .name("OpenControl Community")
-                            .url("https://github.com/OpenControlErp")
-                    )
-                    .license(
+                            .url("https://github.com/OpenControlErp"),
+                    ).license(
                         License()
                             .name("Apache 2.0")
-                            .url("https://www.apache.org/licenses/LICENSE-2.0.html")
-                    )
+                            .url("https://www.apache.org/licenses/LICENSE-2.0.html"),
+                    ),
             )
-    }
 }

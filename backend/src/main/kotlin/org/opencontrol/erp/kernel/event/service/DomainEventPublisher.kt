@@ -19,7 +19,7 @@ fun interface PreCommitInterceptor<T : DomainEvent> {
 class DomainEventPublisher(
     private val eventOutboxRepository: EventOutboxRepository,
     private val springEventPublisher: ApplicationEventPublisher,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     private val preCommitInterceptors = CopyOnWriteArrayList<PreCommitInterceptor<DomainEvent>>()
@@ -49,15 +49,16 @@ class DomainEventPublisher(
 
         // 3. Persist to transactional outbox for durable asynchronous delivery
         val payloadJson = objectMapper.writeValueAsString(event)
-        val outbox = EventOutbox(
-            eventId = event.eventId,
-            eventType = event.eventType,
-            aggregateType = event.aggregateType,
-            aggregateId = event.aggregateId,
-            tenantId = event.tenantId,
-            payload = payloadJson,
-            status = OutboxStatus.PENDING
-        )
+        val outbox =
+            EventOutbox(
+                eventId = event.eventId,
+                eventType = event.eventType,
+                aggregateType = event.aggregateType,
+                aggregateId = event.aggregateId,
+                tenantId = event.tenantId,
+                payload = payloadJson,
+                status = OutboxStatus.PENDING,
+            )
         eventOutboxRepository.save(outbox)
         logger.debug("Event '{}' recorded in outbox", event.eventId)
     }

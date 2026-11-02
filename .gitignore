@@ -36,3 +36,11 @@ Thumbs.db
 
 # Docker / Testcontainers
 testcontainers.properties
+
+# Frontend / Node / TypeScript
+node_modules/
+dist/
+.vite/
+coverage/
+*.tsbuildinfo
+

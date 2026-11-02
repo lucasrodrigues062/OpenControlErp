@@ -35,14 +35,17 @@ class PluginLifecycleService(
     private val manifestParser: ManifestParser,
     private val dependencyResolver: DependencyResolver,
     private val applicationContext: ApplicationContext,
-    private val extensionRegistry: org.opencontrol.erp.kernel.spi.service.ExtensionRegistry
+    private val extensionRegistry: org.opencontrol.erp.kernel.spi.service.ExtensionRegistry,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     private val activeClassLoaders = ConcurrentHashMap<String, PluginClassLoader>()
     private val activeInstances = ConcurrentHashMap<String, PluginLifecycle>()
 
     @Transactional
-    fun install(inputStream: InputStream, filename: String): ExtensionPlugin {
+    fun install(
+        inputStream: InputStream,
+        filename: String,
+    ): ExtensionPlugin {
         val tempFile = File.createTempFile("opencontrol-plugin-", ".jar")
         try {
             Files.copy(inputStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
@@ -58,18 +61,19 @@ class PluginLifecycleService(
             val permanentFile = File(storageDir, "${manifest.id}-${manifest.version}.jar")
             Files.copy(tempFile.toPath(), permanentFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
 
-            val plugin = ExtensionPlugin(
-                pluginId = manifest.id,
-                name = manifest.name,
-                description = manifest.description,
-                version = manifest.version,
-                vendor = manifest.vendor,
-                minKernelVersion = manifest.minKernelVersion,
-                maxKernelVersion = manifest.maxKernelVersion,
-                status = PluginStatus.INSTALLED,
-                archiveChecksum = checksum,
-                filePath = permanentFile.absolutePath
-            )
+            val plugin =
+                ExtensionPlugin(
+                    pluginId = manifest.id,
+                    name = manifest.name,
+                    description = manifest.description,
+                    version = manifest.version,
+                    vendor = manifest.vendor,
+                    minKernelVersion = manifest.minKernelVersion,
+                    maxKernelVersion = manifest.maxKernelVersion,
+                    status = PluginStatus.INSTALLED,
+                    archiveChecksum = checksum,
+                    filePath = permanentFile.absolutePath,
+                )
 
             manifest.dependencies.forEach { dep ->
                 plugin.dependencies.add(
@@ -77,8 +81,8 @@ class PluginLifecycleService(
                         plugin = plugin,
                         dependsOnPluginId = dep.pluginId,
                         versionRange = dep.versionRange,
-                        optional = dep.optional
-                    )
+                        optional = dep.optional,
+                    ),
                 )
             }
 
@@ -89,7 +93,7 @@ class PluginLifecycleService(
                 action = PluginAction.INSTALL,
                 fromStatus = null,
                 toStatus = PluginStatus.INSTALLED,
-                details = "Installed package: $filename (checksum: $checksum)"
+                details = "Installed package: $filename (checksum: $checksum)",
             )
 
             logger.info("Successfully installed plugin '{}' version {}", savedPlugin.pluginId, savedPlugin.version)
@@ -101,9 +105,10 @@ class PluginLifecycleService(
 
     @Transactional
     fun activate(id: UUID): ExtensionPlugin {
-        val plugin = pluginRepository.findById(id).orElseThrow {
-            EntityNotFoundException("Plugin not found with ID: $id")
-        }
+        val plugin =
+            pluginRepository.findById(id).orElseThrow {
+                EntityNotFoundException("Plugin not found with ID: $id")
+            }
 
         if (plugin.status == PluginStatus.ACTIVE) {
             return plugin
@@ -124,12 +129,13 @@ class PluginLifecycleService(
                 val clazz = classLoader.loadClass(entryClassName)
                 if (PluginLifecycle::class.java.isAssignableFrom(clazz)) {
                     val lifecycleInstance = clazz.getDeclaredConstructor().newInstance() as PluginLifecycle
-                    val context = PluginContext(
-                        plugin = plugin,
-                        classLoader = classLoader,
-                        applicationContext = applicationContext,
-                        pluginDirectory = jarFile.parentFile
-                    )
+                    val context =
+                        PluginContext(
+                            plugin = plugin,
+                            classLoader = classLoader,
+                            applicationContext = applicationContext,
+                            pluginDirectory = jarFile.parentFile,
+                        )
                     lifecycleInstance.onActivate(context)
                     activeInstances[plugin.pluginId] = lifecycleInstance
                 }
@@ -144,7 +150,7 @@ class PluginLifecycleService(
                 pluginFk = saved.id,
                 action = PluginAction.ACTIVATE,
                 fromStatus = previousStatus,
-                toStatus = PluginStatus.ACTIVE
+                toStatus = PluginStatus.ACTIVE,
             )
 
             logger.info("Activated plugin '{}'", plugin.pluginId)
@@ -160,7 +166,7 @@ class PluginLifecycleService(
                 action = PluginAction.ERROR,
                 fromStatus = previousStatus,
                 toStatus = PluginStatus.ERROR,
-                details = "Activation failure: ${e.message}"
+                details = "Activation failure: ${e.message}",
             )
 
             activeClassLoaders.remove(plugin.pluginId)?.close()
@@ -171,9 +177,10 @@ class PluginLifecycleService(
 
     @Transactional
     fun deactivate(id: UUID): ExtensionPlugin {
-        val plugin = pluginRepository.findById(id).orElseThrow {
-            EntityNotFoundException("Plugin not found with ID: $id")
-        }
+        val plugin =
+            pluginRepository.findById(id).orElseThrow {
+                EntityNotFoundException("Plugin not found with ID: $id")
+            }
 
         if (plugin.status != PluginStatus.ACTIVE) {
             return plugin
@@ -184,12 +191,13 @@ class PluginLifecycleService(
 
         val previousStatus = plugin.status
         activeInstances.remove(plugin.pluginId)?.let { instance ->
-            val context = PluginContext(
-                plugin = plugin,
-                classLoader = activeClassLoaders[plugin.pluginId] ?: javaClass.classLoader,
-                applicationContext = applicationContext,
-                pluginDirectory = File(plugin.filePath ?: ".")
-            )
+            val context =
+                PluginContext(
+                    plugin = plugin,
+                    classLoader = activeClassLoaders[plugin.pluginId] ?: javaClass.classLoader,
+                    applicationContext = applicationContext,
+                    pluginDirectory = File(plugin.filePath ?: "."),
+                )
             try {
                 instance.onDeactivate(context)
             } catch (e: Exception) {
@@ -208,7 +216,7 @@ class PluginLifecycleService(
             pluginFk = saved.id,
             action = PluginAction.DEACTIVATE,
             fromStatus = previousStatus,
-            toStatus = PluginStatus.INACTIVE
+            toStatus = PluginStatus.INACTIVE,
         )
 
         logger.info("Deactivated plugin '{}'", plugin.pluginId)
@@ -216,10 +224,14 @@ class PluginLifecycleService(
     }
 
     @Transactional
-    fun uninstall(id: UUID, purgeData: Boolean) {
-        val plugin = pluginRepository.findById(id).orElseThrow {
-            EntityNotFoundException("Plugin not found with ID: $id")
-        }
+    fun uninstall(
+        id: UUID,
+        purgeData: Boolean,
+    ) {
+        val plugin =
+            pluginRepository.findById(id).orElseThrow {
+                EntityNotFoundException("Plugin not found with ID: $id")
+            }
 
         if (plugin.status == PluginStatus.ACTIVE) {
             deactivate(id)
@@ -235,7 +247,7 @@ class PluginLifecycleService(
             action = PluginAction.UNINSTALL,
             fromStatus = plugin.status,
             toStatus = PluginStatus.INACTIVE,
-            details = "Uninstalled plugin '${plugin.pluginId}'. Purge data: $purgeData"
+            details = "Uninstalled plugin '${plugin.pluginId}'. Purge data: $purgeData",
         )
 
         pluginRepository.delete(plugin)
@@ -243,31 +255,27 @@ class PluginLifecycleService(
     }
 
     @Transactional(readOnly = true)
-    fun list(status: PluginStatus?): List<ExtensionPlugin> {
-        return if (status != null) {
+    fun list(status: PluginStatus?): List<ExtensionPlugin> =
+        if (status != null) {
             pluginRepository.findAllByStatus(status)
         } else {
             pluginRepository.findAll()
         }
-    }
 
     @Transactional(readOnly = true)
-    fun getById(id: UUID): ExtensionPlugin {
-        return pluginRepository.findById(id).orElseThrow {
+    fun getById(id: UUID): ExtensionPlugin =
+        pluginRepository.findById(id).orElseThrow {
             EntityNotFoundException("Plugin not found with ID: $id")
         }
-    }
 
-    fun getClassLoader(pluginId: String): PluginClassLoader? {
-        return activeClassLoaders[pluginId]
-    }
+    fun getClassLoader(pluginId: String): PluginClassLoader? = activeClassLoaders[pluginId]
 
     private fun recordAuditLog(
         pluginFk: UUID,
         action: PluginAction,
         fromStatus: PluginStatus?,
         toStatus: PluginStatus,
-        details: String? = null
+        details: String? = null,
     ) {
         auditLogRepository.save(
             ExtensionAuditLog(
@@ -276,8 +284,8 @@ class PluginLifecycleService(
                 performedBy = SecurityContextHolder.getCurrentUsername(),
                 fromStatus = fromStatus,
                 toStatus = toStatus,
-                details = details
-            )
+                details = details,
+            ),
         )
     }
 

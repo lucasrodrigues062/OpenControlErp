@@ -26,14 +26,19 @@ class ExtensionRegistry {
         provider: T,
         priority: Int = 100,
         pluginId: String = "core",
-        contextMatcher: ContextMatcher? = null
+        contextMatcher: ContextMatcher? = null,
     ) {
         val list = providers.computeIfAbsent(spiInterface) { CopyOnWriteArrayList() }
         list.add(RegisteredProvider(provider, priority, pluginId, contextMatcher))
-        logger.info("Registered provider '${provider::class.qualifiedName}' for SPI '${spiInterface.name}' with priority $priority (plugin: $pluginId)")
+        logger.info(
+            "Registered provider '${provider::class.qualifiedName}' for SPI '${spiInterface.name}' with priority $priority (plugin: $pluginId)",
+        )
     }
 
-    fun <T : ExtensionPoint> registerDefaultFallback(spiInterface: Class<T>, fallback: T) {
+    fun <T : ExtensionPoint> registerDefaultFallback(
+        spiInterface: Class<T>,
+        fallback: T,
+    ) {
         defaultFallbacks[spiInterface] = fallback
         logger.info("Registered default fallback '${fallback::class.qualifiedName}' for SPI '${spiInterface.name}'")
     }
@@ -46,13 +51,17 @@ class ExtensionRegistry {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : ExtensionPoint> resolve(spiInterface: Class<T>, context: ExecutionContext): T {
+    fun <T : ExtensionPoint> resolve(
+        spiInterface: Class<T>,
+        context: ExecutionContext,
+    ): T {
         val candidates = providers[spiInterface] as? List<RegisteredProvider<T>>
 
-        val matched = candidates
-            ?.filter { it.contextMatcher == null || it.contextMatcher.matches(context) }
-            ?.maxByOrNull { it.priority }
-            ?.provider
+        val matched =
+            candidates
+                ?.filter { it.contextMatcher == null || it.contextMatcher.matches(context) }
+                ?.maxByOrNull { it.priority }
+                ?.provider
 
         if (matched != null) {
             return matched
@@ -68,7 +77,10 @@ class ExtensionRegistry {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : ExtensionPoint> resolveAll(spiInterface: Class<T>, context: ExecutionContext): List<T> {
+    fun <T : ExtensionPoint> resolveAll(
+        spiInterface: Class<T>,
+        context: ExecutionContext,
+    ): List<T> {
         val candidates = providers[spiInterface] as? List<RegisteredProvider<T>> ?: emptyList()
         return candidates
             .filter { it.contextMatcher == null || it.contextMatcher.matches(context) }

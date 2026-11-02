@@ -10,7 +10,6 @@ import org.opencontrol.erp.kernel.plugin.service.DependencyResolver
 import kotlin.test.assertEquals
 
 class DependencyResolverTest {
-
     private val resolver = DependencyResolver()
 
     @Test
@@ -47,14 +46,13 @@ class DependencyResolverTest {
         }
     }
 
-    private fun createPlugin(id: String): ExtensionPlugin {
-        return ExtensionPlugin(
+    private fun createPlugin(id: String): ExtensionPlugin =
+        ExtensionPlugin(
             pluginId = id,
             name = id,
             version = "1.0.0",
             vendor = "Test",
             minKernelVersion = "1.0.0",
-            status = PluginStatus.INSTALLED
+            status = PluginStatus.INSTALLED,
         )
-    }
 }

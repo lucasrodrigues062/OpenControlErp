@@ -17,5 +17,5 @@ interface DomainEvent {
 
 enum class EventMode {
     SYNC_PRE_COMMIT,
-    ASYNC_POST_COMMIT
+    ASYNC_POST_COMMIT,
 }

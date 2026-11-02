@@ -2,12 +2,10 @@ package org.opencontrol.erp.kernel.plugin.service
 
 import org.opencontrol.erp.kernel.exception.PluginDependencyException
 import org.opencontrol.erp.kernel.plugin.domain.ExtensionPlugin
-import org.opencontrol.erp.kernel.plugin.domain.PluginStatus
 import org.springframework.stereotype.Component
 
 @Component
 class DependencyResolver {
-
     /**
      * Resolves activation order using Kahn's algorithm for topological sorting.
      * Throws PluginDependencyException if a circular dependency is detected.
@@ -63,16 +61,20 @@ class DependencyResolver {
     /**
      * Validates that an active plugin has no other active plugins depending on it before deactivation.
      */
-    fun validateCanDeactivate(pluginToDeactivate: ExtensionPlugin, allActivePlugins: List<ExtensionPlugin>) {
-        val activeDependents = allActivePlugins.filter { active ->
-            active.pluginId != pluginToDeactivate.pluginId &&
-            active.dependencies.any { dep -> !dep.optional && dep.dependsOnPluginId == pluginToDeactivate.pluginId }
-        }
+    fun validateCanDeactivate(
+        pluginToDeactivate: ExtensionPlugin,
+        allActivePlugins: List<ExtensionPlugin>,
+    ) {
+        val activeDependents =
+            allActivePlugins.filter { active ->
+                active.pluginId != pluginToDeactivate.pluginId &&
+                    active.dependencies.any { dep -> !dep.optional && dep.dependsOnPluginId == pluginToDeactivate.pluginId }
+            }
 
         if (activeDependents.isNotEmpty()) {
             val names = activeDependents.joinToString { "'${it.name}' (${it.pluginId})" }
             throw PluginDependencyException(
-                "Cannot deactivate '${pluginToDeactivate.name}' because the following active plugins depend on it: $names"
+                "Cannot deactivate '${pluginToDeactivate.name}' because the following active plugins depend on it: $names",
             )
         }
     }

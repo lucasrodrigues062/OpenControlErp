@@ -14,19 +14,25 @@ import kotlin.test.assertEquals
 @SpringBootTest
 @ActiveProfiles("test")
 class ExtensionRegistryIntegrationTest {
-
     @Autowired
     private lateinit var extensionRegistry: ExtensionRegistry
 
     @Test
     fun `should dynamically register, resolve and unregister SPI provider`() {
-        val customProvider = object : FiscalEngineSPI {
-            override fun matches(context: ExecutionContext): Boolean = context.jurisdiction == "BR"
-            override fun issueDocument(request: FiscalDocumentRequest) = FiscalIssuanceResult("CUSTOM_BR", "KEY123", "P123", "ok")
-        }
+        val customProvider =
+            object : FiscalEngineSPI {
+                override fun matches(context: ExecutionContext): Boolean = context.jurisdiction == "BR"
+
+                override fun issueDocument(request: FiscalDocumentRequest) = FiscalIssuanceResult("CUSTOM_BR", "KEY123", "P123", "ok")
+            }
 
         extensionRegistry.registerDefaultFallback(FiscalEngineSPI::class.java, DefaultNoOpFiscalEngine())
-        extensionRegistry.registerProvider(FiscalEngineSPI::class.java, customProvider, priority = 500, pluginId = "org.opencontrol.custom.fiscal")
+        extensionRegistry.registerProvider(
+            FiscalEngineSPI::class.java,
+            customProvider,
+            priority = 500,
+            pluginId = "org.opencontrol.custom.fiscal",
+        )
 
         val context = ExecutionContext.defaultFor("BR")
         val resolved = extensionRegistry.resolve(FiscalEngineSPI::class.java, context)

@@ -7,23 +7,25 @@ import org.opencontrol.erp.kernel.spi.fiscal.FiscalEngineSPI
 import org.opencontrol.erp.kernel.spi.fiscal.FiscalIssuanceResult
 import org.opencontrol.erp.kernel.spi.service.ExtensionRegistry
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 class ExtensionRegistryTest {
-
     private val registry = ExtensionRegistry()
 
     @Test
     fun `should resolve highest priority provider matching context`() {
-        val lowPriorityProvider = object : FiscalEngineSPI {
-            override fun matches(context: ExecutionContext): Boolean = context.jurisdiction == "BR"
-            override fun issueDocument(request: FiscalDocumentRequest) = FiscalIssuanceResult("LOW", null, null, "low")
-        }
+        val lowPriorityProvider =
+            object : FiscalEngineSPI {
+                override fun matches(context: ExecutionContext): Boolean = context.jurisdiction == "BR"
 
-        val highPriorityProvider = object : FiscalEngineSPI {
-            override fun matches(context: ExecutionContext): Boolean = context.jurisdiction == "BR"
-            override fun issueDocument(request: FiscalDocumentRequest) = FiscalIssuanceResult("HIGH", null, null, "high")
-        }
+                override fun issueDocument(request: FiscalDocumentRequest) = FiscalIssuanceResult("LOW", null, null, "low")
+            }
+
+        val highPriorityProvider =
+            object : FiscalEngineSPI {
+                override fun matches(context: ExecutionContext): Boolean = context.jurisdiction == "BR"
+
+                override fun issueDocument(request: FiscalDocumentRequest) = FiscalIssuanceResult("HIGH", null, null, "high")
+            }
 
         registry.registerProvider(FiscalEngineSPI::class.java, lowPriorityProvider, priority = 50, pluginId = "plugin.low")
         registry.registerProvider(FiscalEngineSPI::class.java, highPriorityProvider, priority = 200, pluginId = "plugin.high")

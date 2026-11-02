@@ -10,7 +10,9 @@ import java.util.UUID
 @Repository
 interface ExtensionPluginRepository : JpaRepository<ExtensionPlugin, UUID> {
     fun findByPluginId(pluginId: String): ExtensionPlugin?
+
     fun findAllByStatus(status: PluginStatus): List<ExtensionPlugin>
+
     fun existsByPluginId(pluginId: String): Boolean
 }
 

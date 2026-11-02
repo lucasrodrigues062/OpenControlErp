@@ -18,7 +18,6 @@ import kotlin.test.assertNotNull
 @ActiveProfiles("test")
 @Transactional
 class ExtensionLifecycleIntegrationTest {
-
     @Autowired
     private lateinit var pluginLifecycleService: PluginLifecycleService
 
@@ -31,14 +30,15 @@ class ExtensionLifecycleIntegrationTest {
     @Test
     fun `should manage full plugin lifecycle and audit trail`() {
         val uniqueId = "org.opencontrol.test.sample-${UUID.randomUUID().toString().take(8)}"
-        val plugin = ExtensionPlugin(
-            pluginId = uniqueId,
-            name = "Sample Plugin",
-            version = "1.0.0",
-            vendor = "Test Vendor",
-            minKernelVersion = "1.0.0",
-            status = PluginStatus.ACTIVE,
-        )
+        val plugin =
+            ExtensionPlugin(
+                pluginId = uniqueId,
+                name = "Sample Plugin",
+                version = "1.0.0",
+                vendor = "Test Vendor",
+                minKernelVersion = "1.0.0",
+                status = PluginStatus.ACTIVE,
+            )
         val saved = pluginRepository.save(plugin)
         assertNotNull(saved.id)
 
@@ -51,4 +51,3 @@ class ExtensionLifecycleIntegrationTest {
         assertNotNull(logs)
     }
 }
-

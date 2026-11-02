@@ -26,8 +26,9 @@ object SecurityContextHolder {
 
     fun getCurrentUsername(): String = currentUser.get()?.username ?: "system"
 
-    fun getCurrentTenantId(): UUID = currentUser.get()?.tenant?.tenantId
-        ?: UUID.fromString("00000000-0000-0000-0000-000000000000")
+    fun getCurrentTenantId(): UUID =
+        currentUser.get()?.tenant?.tenantId
+            ?: UUID.fromString("00000000-0000-0000-0000-000000000000")
 
     fun getCurrentJurisdiction(): String = currentUser.get()?.tenant?.jurisdiction ?: "BR"
 

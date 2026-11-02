@@ -14,17 +14,13 @@ import java.util.UUID
 class ExtensionDependency(
     @Id
     val id: UUID = UUID.randomUUID(),
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plugin_fk", nullable = false)
     val plugin: ExtensionPlugin,
-
     @Column(name = "depends_on_plugin_id", nullable = false, length = 120)
     val dependsOnPluginId: String,
-
     @Column(name = "version_range", nullable = false, length = 64)
     val versionRange: String,
-
     @Column(nullable = false)
-    val optional: Boolean = false
+    val optional: Boolean = false,
 )

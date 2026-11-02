@@ -22,13 +22,12 @@ import java.util.UUID
 @RequestMapping("/api/v1/extensions")
 @Tag(name = "Extension Management", description = "Endpoints for managing modular apps, extensions, and lifecycle")
 class ExtensionController(
-    private val pluginLifecycleService: PluginLifecycleService
+    private val pluginLifecycleService: PluginLifecycleService,
 ) {
-
     @GetMapping
     @Operation(summary = "List all installed and discovered extensions")
     fun listExtensions(
-        @RequestParam(required = false) status: PluginStatus?
+        @RequestParam(required = false) status: PluginStatus?,
     ): ResponseEntity<List<ExtensionPluginDto>> {
         val plugins = pluginLifecycleService.list(status).map { ExtensionPluginDto.fromEntity(it) }
         return ResponseEntity.ok(plugins)
@@ -37,7 +36,7 @@ class ExtensionController(
     @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @Operation(summary = "Upload and install a new extension package")
     fun installExtension(
-        @RequestParam("file") file: MultipartFile
+        @RequestParam("file") file: MultipartFile,
     ): ResponseEntity<ExtensionPluginDto> {
         val plugin = pluginLifecycleService.install(file.inputStream, file.originalFilename ?: "plugin.jar")
         return ResponseEntity.status(HttpStatus.CREATED).body(ExtensionPluginDto.fromEntity(plugin))
@@ -45,21 +44,27 @@ class ExtensionController(
 
     @GetMapping("/{id}")
     @Operation(summary = "Get details of a specific extension")
-    fun getExtension(@PathVariable id: UUID): ResponseEntity<ExtensionPluginDto> {
+    fun getExtension(
+        @PathVariable id: UUID,
+    ): ResponseEntity<ExtensionPluginDto> {
         val plugin = pluginLifecycleService.getById(id)
         return ResponseEntity.ok(ExtensionPluginDto.fromEntity(plugin))
     }
 
     @PostMapping("/{id}/activate")
     @Operation(summary = "Activate an installed or inactive extension")
-    fun activateExtension(@PathVariable id: UUID): ResponseEntity<ExtensionPluginDto> {
+    fun activateExtension(
+        @PathVariable id: UUID,
+    ): ResponseEntity<ExtensionPluginDto> {
         val plugin = pluginLifecycleService.activate(id)
         return ResponseEntity.ok(ExtensionPluginDto.fromEntity(plugin))
     }
 
     @PostMapping("/{id}/deactivate")
     @Operation(summary = "Deactivate an active extension")
-    fun deactivateExtension(@PathVariable id: UUID): ResponseEntity<ExtensionPluginDto> {
+    fun deactivateExtension(
+        @PathVariable id: UUID,
+    ): ResponseEntity<ExtensionPluginDto> {
         val plugin = pluginLifecycleService.deactivate(id)
         return ResponseEntity.ok(ExtensionPluginDto.fromEntity(plugin))
     }
@@ -68,7 +73,7 @@ class ExtensionController(
     @Operation(summary = "Uninstall an extension")
     fun uninstallExtension(
         @PathVariable id: UUID,
-        @RequestParam(defaultValue = "false") purgeData: Boolean
+        @RequestParam(defaultValue = "false") purgeData: Boolean,
     ): ResponseEntity<Void> {
         pluginLifecycleService.uninstall(id, purgeData)
         return ResponseEntity.noContent().build()

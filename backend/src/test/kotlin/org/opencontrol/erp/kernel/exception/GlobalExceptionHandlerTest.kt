@@ -6,7 +6,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class GlobalExceptionHandlerTest {
-
     private val handler = GlobalExceptionHandler()
 
     @Test

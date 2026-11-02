@@ -5,15 +5,14 @@ import org.junit.jupiter.api.assertThrows
 import org.opencontrol.erp.kernel.exception.PluginValidationException
 import org.opencontrol.erp.kernel.plugin.loader.ManifestParser
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 class ManifestParserTest {
-
     private val parser = ManifestParser()
 
     @Test
     fun `should parse valid manifest JSON successfully`() {
-        val json = """
+        val json =
+            """
             {
               "id": "org.opencontrol.fiscal.br",
               "name": "Brazilian Fiscal Engine",
@@ -27,7 +26,7 @@ class ManifestParserTest {
                 }
               ]
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val manifest = parser.parse(json.byteInputStream())
         assertEquals("org.opencontrol.fiscal.br", manifest.id)
@@ -39,7 +38,8 @@ class ManifestParserTest {
 
     @Test
     fun `should fail validation when plugin ID has invalid format`() {
-        val json = """
+        val json =
+            """
             {
               "id": "INVALID_ID",
               "name": "Test Plugin",
@@ -47,7 +47,7 @@ class ManifestParserTest {
               "vendor": "Test Vendor",
               "minKernelVersion": "1.0.0"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         assertThrows<PluginValidationException> {
             parser.parse(json.byteInputStream())
@@ -56,7 +56,8 @@ class ManifestParserTest {
 
     @Test
     fun `should fail validation when SemVer is malformed`() {
-        val json = """
+        val json =
+            """
             {
               "id": "org.opencontrol.test",
               "name": "Test Plugin",
@@ -64,7 +65,7 @@ class ManifestParserTest {
               "vendor": "Test Vendor",
               "minKernelVersion": "1.0.0"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         assertThrows<PluginValidationException> {
             parser.parse(json.byteInputStream())

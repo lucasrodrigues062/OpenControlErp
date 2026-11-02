@@ -12,13 +12,13 @@ import org.testcontainers.junit.jupiter.Testcontainers
 @ActiveProfiles("test")
 @Testcontainers
 abstract class BaseIntegrationTest {
-
     companion object {
         @Container
-        val postgresContainer: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16-alpine")
-            .withDatabaseName("opencontrol_test")
-            .withUsername("test")
-            .withPassword("test")
+        val postgresContainer: PostgreSQLContainer<*> =
+            PostgreSQLContainer("postgres:16-alpine")
+                .withDatabaseName("opencontrol_test")
+                .withUsername("test")
+                .withPassword("test")
 
         @JvmStatic
         @DynamicPropertySource

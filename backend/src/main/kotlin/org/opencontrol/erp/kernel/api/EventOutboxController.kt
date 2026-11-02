@@ -2,7 +2,6 @@ package org.opencontrol.erp.kernel.api
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.opencontrol.erp.kernel.event.domain.EventOutbox
 import org.opencontrol.erp.kernel.event.domain.OutboxStatus
 import org.opencontrol.erp.kernel.event.repository.EventOutboxRepository
 import org.opencontrol.erp.kernel.event.worker.OutboxDispatchWorker
@@ -35,42 +34,46 @@ data class EventOutboxDto(
 @Tag(name = "Event Outbox Management", description = "Monitor domain events, failures and trigger manual retries")
 class EventOutboxController(
     private val eventOutboxRepository: EventOutboxRepository,
-    private val outboxDispatchWorker: OutboxDispatchWorker
+    private val outboxDispatchWorker: OutboxDispatchWorker,
 ) {
-
     @GetMapping
     @Operation(summary = "Inspect domain event outbox status and failed deliveries")
     fun listEventOutbox(
-        @RequestParam(required = false) status: OutboxStatus?
+        @RequestParam(required = false) status: OutboxStatus?,
     ): ResponseEntity<List<EventOutboxDto>> {
-        val list = if (status != null) {
-            eventOutboxRepository.findAllByStatus(status)
-        } else {
-            eventOutboxRepository.findAll()
-        }
-        val dtos = list.map {
-            EventOutboxDto(
-                id = it.id,
-                eventId = it.eventId,
-                eventType = it.eventType,
-                aggregateType = it.aggregateType,
-                aggregateId = it.aggregateId,
-                status = it.status,
-                retryCount = it.retryCount,
-                lastError = it.lastError,
-                createdAt = it.createdAt,
-                publishedAt = it.publishedAt
-            )
-        }
+        val list =
+            if (status != null) {
+                eventOutboxRepository.findAllByStatus(status)
+            } else {
+                eventOutboxRepository.findAll()
+            }
+        val dtos =
+            list.map {
+                EventOutboxDto(
+                    id = it.id,
+                    eventId = it.eventId,
+                    eventType = it.eventType,
+                    aggregateType = it.aggregateType,
+                    aggregateId = it.aggregateId,
+                    status = it.status,
+                    retryCount = it.retryCount,
+                    lastError = it.lastError,
+                    createdAt = it.createdAt,
+                    publishedAt = it.publishedAt,
+                )
+            }
         return ResponseEntity.ok(dtos)
     }
 
     @PostMapping("/{id}/retry")
     @Operation(summary = "Manually retry a failed or dead-letter event")
-    fun retryEvent(@PathVariable id: UUID): ResponseEntity<Void> {
-        val outbox = eventOutboxRepository.findById(id).orElseThrow {
-            EntityNotFoundException("Outbox event not found with ID: $id")
-        }
+    fun retryEvent(
+        @PathVariable id: UUID,
+    ): ResponseEntity<Void> {
+        val outbox =
+            eventOutboxRepository.findById(id).orElseThrow {
+                EntityNotFoundException("Outbox event not found with ID: $id")
+            }
         outbox.status = OutboxStatus.PENDING
         outbox.nextRetryAt = Instant.now()
         eventOutboxRepository.save(outbox)

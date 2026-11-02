@@ -18,7 +18,7 @@ import kotlin.math.pow
 @Component
 @EnableScheduling
 class OutboxDispatchWorker(
-    private val eventOutboxRepository: EventOutboxRepository
+    private val eventOutboxRepository: EventOutboxRepository,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     private val virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor()

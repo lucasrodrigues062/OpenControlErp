@@ -20,7 +20,9 @@ data class FiscalIssuanceResult(
     val message: String,
 )
 
-interface FiscalEngineSPI : ExtensionPoint, ContextMatcher {
+interface FiscalEngineSPI :
+    ExtensionPoint,
+    ContextMatcher {
     fun issueDocument(request: FiscalDocumentRequest): FiscalIssuanceResult
 }
 
@@ -28,12 +30,11 @@ interface FiscalEngineSPI : ExtensionPoint, ContextMatcher {
 class DefaultNoOpFiscalEngine : FiscalEngineSPI {
     override fun matches(context: ExecutionContext): Boolean = true
 
-    override fun issueDocument(request: FiscalDocumentRequest): FiscalIssuanceResult {
-        return FiscalIssuanceResult(
+    override fun issueDocument(request: FiscalDocumentRequest): FiscalIssuanceResult =
+        FiscalIssuanceResult(
             status = "SIMULATED",
             accessKey = "SIMULATED-KEY-${request.documentNumber}",
             protocolNumber = "NOOP-PROTO-001",
-            message = "Simulated document issuance by core default fallback engine"
+            message = "Simulated document issuance by core default fallback engine",
         )
-    }
 }

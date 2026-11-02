@@ -6,7 +6,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class JacksonConfigTest {
-
     private val jacksonConfig = JacksonConfig()
 
     @Test
