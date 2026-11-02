@@ -39,6 +39,8 @@ class User(
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "profile_id", nullable = false)
     var profile: Profile,
+    @Column(name = "preferred_language", nullable = false, length = 10)
+    var preferredLanguage: String = "en-US",
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now(),
     @Column(name = "updated_at", nullable = false)

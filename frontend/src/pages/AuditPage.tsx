@@ -6,9 +6,11 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Drawer } from '../components/ui/drawer';
+import { useI18n } from '../context/I18nContext';
 import { Eye } from 'lucide-react';
 
 export const AuditPage: React.FC = () => {
+  const { t, formatDate } = useI18n();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [entityType, setEntityType] = useState('');
   const [action, setAction] = useState('');
@@ -55,7 +57,7 @@ export const AuditPage: React.FC = () => {
   };
 
   const formatJson = (raw?: string) => {
-    if (!raw) return 'None';
+    if (!raw) return t('audit.noChanges');
     try {
       const parsed = JSON.parse(raw);
       return JSON.stringify(parsed, null, 2);
@@ -68,10 +70,10 @@ export const AuditPage: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-          System Audit Trail
+          {t('audit.title')}
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Immutable, chronological record of all domain mutations (Who, What, and When).
+          {t('audit.description')}
         </p>
       </div>
 
@@ -79,13 +81,13 @@ export const AuditPage: React.FC = () => {
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle>Historical Activity</CardTitle>
-              <CardDescription>Append-only audit log records</CardDescription>
+              <CardTitle>{t('audit.title')}</CardTitle>
+              <CardDescription>{t('common.actions')}: {logs.length}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Input
-                  placeholder="Filter by entity (e.g. User, Profile)..."
+                  placeholder={t('audit.filterByEntity')}
                   className="w-56 h-9"
                   value={entityType}
                   onChange={(e) => setEntityType(e.target.value)}
@@ -96,7 +98,7 @@ export const AuditPage: React.FC = () => {
                 value={action}
                 onChange={(e) => setAction(e.target.value)}
               >
-                <option value="">All Actions</option>
+                <option value="">{t('audit.allActions')}</option>
                 <option value="CREATE">CREATE</option>
                 <option value="UPDATE">UPDATE</option>
                 <option value="DELETE">DELETE</option>
@@ -110,19 +112,19 @@ export const AuditPage: React.FC = () => {
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 uppercase text-[11px] font-semibold border-y">
                 <tr>
-                  <th className="py-3 px-4">Timestamp (When)</th>
-                  <th className="py-3 px-4">Actor (Who)</th>
-                  <th className="py-3 px-4">Action</th>
-                  <th className="py-3 px-4">Entity (What)</th>
-                  <th className="py-3 px-4">Details</th>
-                  <th className="py-3 px-4 text-right">State Diff</th>
+                  <th className="py-3 px-4">{t('audit.timestamp')}</th>
+                  <th className="py-3 px-4">{t('audit.actor')}</th>
+                  <th className="py-3 px-4">{t('audit.action')}</th>
+                  <th className="py-3 px-4">{t('audit.entityType')}</th>
+                  <th className="py-3 px-4">{t('audit.details')}</th>
+                  <th className="py-3 px-4 text-right">{t('audit.stateBefore')} / {t('audit.stateAfter')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {logs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50">
                     <td className="py-3 px-4 text-xs font-mono text-slate-500 whitespace-nowrap">
-                      {new Date(log.createdAt).toLocaleString()}
+                      {formatDate(log.createdAt)}
                     </td>
                     <td className="py-3 px-4 font-medium text-slate-900 dark:text-white">
                       @{log.actorUsername}
@@ -150,7 +152,7 @@ export const AuditPage: React.FC = () => {
                           onClick={() => setSelectedLog(log)}
                         >
                           <Eye className="h-3.5 w-3.5" />
-                          Inspect Diff
+                          {t('audit.viewDiff')}
                         </Button>
                       )}
                     </td>
@@ -159,7 +161,7 @@ export const AuditPage: React.FC = () => {
                 {logs.length === 0 && !loading && (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-slate-500">
-                      No audit records found.
+                      {t('common.noData')}
                     </td>
                   </tr>
                 )}
@@ -198,34 +200,34 @@ export const AuditPage: React.FC = () => {
       <Drawer
         isOpen={!!selectedLog}
         onClose={() => setSelectedLog(null)}
-        title={`Audit Snapshot: ${selectedLog?.action} on ${selectedLog?.entityType}`}
+        title={`${t('audit.inspectChanges')}: ${selectedLog?.action} (${selectedLog?.entityType})`}
         description={`Event ID: ${selectedLog?.id}`}
       >
         {selectedLog && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg text-xs">
               <div>
-                <span className="text-slate-400">Actor:</span>
+                <span className="text-slate-400">{t('audit.actor')}:</span>
                 <p className="font-semibold text-slate-900 dark:text-white">
                   @{selectedLog.actorUsername}
                 </p>
               </div>
               <div>
-                <span className="text-slate-400">Timestamp:</span>
+                <span className="text-slate-400">{t('audit.timestamp')}:</span>
                 <p className="font-semibold text-slate-900 dark:text-white">
-                  {new Date(selectedLog.createdAt).toISOString()}
+                  {formatDate(selectedLog.createdAt)}
                 </p>
               </div>
               <div>
-                <span className="text-slate-400">Target Entity:</span>
+                <span className="text-slate-400">{t('audit.entityType')}:</span>
                 <p className="font-semibold text-slate-900 dark:text-white">
                   {selectedLog.entityType} ({selectedLog.entityId})
                 </p>
               </div>
               <div>
-                <span className="text-slate-400">Details:</span>
+                <span className="text-slate-400">{t('audit.details')}:</span>
                 <p className="font-semibold text-slate-900 dark:text-white">
-                  {selectedLog.details || 'N/A'}
+                  {selectedLog.details || '-'}
                 </p>
               </div>
             </div>
@@ -234,7 +236,7 @@ export const AuditPage: React.FC = () => {
               {selectedLog.stateBefore && (
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-rose-500 mb-1">
-                    State Before (Previous)
+                    {t('audit.stateBefore')}
                   </h4>
                   <pre className="p-3 rounded-lg bg-slate-900 text-rose-300 text-xs font-mono overflow-x-auto max-h-60 border border-slate-800">
                     {formatJson(selectedLog.stateBefore)}
@@ -245,7 +247,7 @@ export const AuditPage: React.FC = () => {
               {selectedLog.stateAfter && (
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-500 mb-1">
-                    State After (Committed)
+                    {t('audit.stateAfter')}
                   </h4>
                   <pre className="p-3 rounded-lg bg-slate-900 text-emerald-300 text-xs font-mono overflow-x-auto max-h-60 border border-slate-800">
                     {formatJson(selectedLog.stateAfter)}

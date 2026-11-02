@@ -1,0 +1,59 @@
+openapi: 3.0.3
+info:
+  title: OpenControl ERP - User Preferences API
+  version: 1.0.0
+  description: Endpoints for managing user account preferences including language selection.
+paths:
+  /api/v1/iam/users/me/preferences:
+    patch:
+      summary: Update authenticated user preferences
+      description: Updates preferences such as preferred UI language for the currently authenticated user.
+      operationId: updateCurrentUserPreferences
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserPreferencesRequest'
+      responses:
+        '200':
+          description: Preferences updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferencesResponse'
+        '400':
+          description: Invalid preference payload (e.g. unsupported language code)
+        '401':
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    UpdateUserPreferencesRequest:
+      type: object
+      required:
+        - preferredLanguage
+      properties:
+        preferredLanguage:
+          type: string
+          enum: [en-US, pt-BR]
+          example: pt-BR
+    UserPreferencesResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        preferredLanguage:
+          type: string
+          example: pt-BR
+        updatedAt:
+          type: string
+          format: date-time

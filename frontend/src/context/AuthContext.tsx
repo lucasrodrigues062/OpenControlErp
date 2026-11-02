@@ -17,6 +17,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(data.user);
     localStorage.setItem('opencontrol_token', data.accessToken);
     localStorage.setItem('opencontrol_user', JSON.stringify(data.user));
+    if (data.user.preferredLanguage === 'en-US' || data.user.preferredLanguage === 'pt-BR') {
+      localStorage.setItem('opencontrol_language', data.user.preferredLanguage);
+      document.documentElement.lang = data.user.preferredLanguage;
+    }
   };
 
   const logout = () => {

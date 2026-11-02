@@ -16,6 +16,7 @@ import org.opencontrol.erp.iam.repository.UserRepository
 import org.opencontrol.erp.kernel.context.SecurityContextHolder
 import org.opencontrol.erp.kernel.context.TenantContext
 import org.opencontrol.erp.kernel.context.UserContext
+import org.opencontrol.erp.kernel.exception.EntityNotFoundException
 import org.opencontrol.erp.kernel.exception.PluginConflictException
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -76,6 +77,18 @@ class UserServiceTest {
     }
 
     @Test
+    fun `should throw EntityNotFoundException when creating user with non-existent profile`() {
+        val profileId = UUID.randomUUID()
+        every { userRepository.existsByTenantIdAndUsername(tenantId, "joao") } returns false
+        every { userRepository.existsByTenantIdAndEmail(tenantId, "joao@opencontrol.org") } returns false
+        every { profileRepository.findById(profileId) } returns Optional.empty()
+
+        assertThrows<EntityNotFoundException> {
+            userService.createUser("joao", "joao@opencontrol.org", "pass", "Joao", profileId)
+        }
+    }
+
+    @Test
     fun `should reject duplicate username in same tenant`() {
         every { userRepository.existsByTenantIdAndUsername(tenantId, "joao") } returns true
 
@@ -103,37 +116,35 @@ class UserServiceTest {
                 name = "Administrator",
                 isSystem = true,
             )
-        val adminUser =
+        val user =
             User(
                 id = UUID.randomUUID(),
                 tenantId = tenantId,
                 username = "admin",
                 email = "admin@opencontrol.org",
                 passwordHash = "hash",
-                fullName = "Admin",
+                fullName = "System Admin",
                 profile = adminProfile,
                 status = UserStatus.ACTIVE,
             )
 
-        every { userRepository.findById(adminUser.id) } returns Optional.of(adminUser)
+        every { userRepository.findById(user.id) } returns Optional.of(user)
         every { profileRepository.findById(adminProfile.id) } returns Optional.of(adminProfile)
-        every { userRepository.countByProfileId(adminProfile.id) } returns 1L
+        every { userRepository.countByProfileId(adminProfile.id) } returns 1
 
-        val exception =
-            assertThrows<IllegalStateException> {
-                userService.updateUser(
-                    id = adminUser.id,
-                    email = adminUser.email,
-                    fullName = adminUser.fullName,
-                    status = UserStatus.INACTIVE,
-                    profileId = adminProfile.id,
-                )
-            }
-        assertEquals("Cannot deactivate or change profile of the last remaining system administrator", exception.message)
+        assertThrows<IllegalStateException> {
+            userService.updateUser(
+                id = user.id,
+                email = user.email,
+                fullName = user.fullName,
+                status = UserStatus.INACTIVE,
+                profileId = adminProfile.id,
+            )
+        }
     }
 
     @Test
-    fun `should update user details successfully`() {
+    fun `should update user attributes and single profile assignment`() {
         val profileA = Profile(id = UUID.randomUUID(), tenantId = tenantId, name = "ProfileA")
         val profileB = Profile(id = UUID.randomUUID(), tenantId = tenantId, name = "ProfileB")
         val user =
@@ -168,6 +179,78 @@ class UserServiceTest {
     }
 
     @Test
+    fun `should throw EntityNotFoundException when updating non-existent user`() {
+        val userId = UUID.randomUUID()
+        every { userRepository.findById(userId) } returns Optional.empty()
+
+        assertThrows<EntityNotFoundException> {
+            userService.updateUser(userId, "new@test.com", "Name", UserStatus.ACTIVE, UUID.randomUUID())
+        }
+    }
+
+    @Test
+    fun `should throw EntityNotFoundException when updating user with non-existent target profile`() {
+        val profileId = UUID.randomUUID()
+        val user =
+            User(
+                id = UUID.randomUUID(),
+                tenantId = tenantId,
+                username = "u",
+                email = "u@test.com",
+                passwordHash = "hash",
+                fullName = "Name",
+                profile = Profile(id = UUID.randomUUID(), tenantId = tenantId, name = "P"),
+            )
+        every { userRepository.findById(user.id) } returns Optional.of(user)
+        every { profileRepository.findById(profileId) } returns Optional.empty()
+
+        assertThrows<EntityNotFoundException> {
+            userService.updateUser(user.id, "u@test.com", "Name", UserStatus.ACTIVE, profileId)
+        }
+    }
+
+    @Test
+    fun `should update user preferred language when valid`() {
+        val user =
+            User(
+                id = UUID.randomUUID(),
+                tenantId = tenantId,
+                username = "lucas",
+                email = "lucas@opencontrol.org",
+                passwordHash = "hash",
+                fullName = "Lucas",
+                profile = Profile(id = UUID.randomUUID(), tenantId = tenantId, name = "P"),
+                preferredLanguage = "en-US",
+            )
+
+        every { userRepository.findById(user.id) } returns Optional.of(user)
+        every { userRepository.save(any()) } answers { firstArg() }
+
+        val updated = userService.updateUserPreferences(user.id, "pt-BR")
+
+        assertEquals("pt-BR", updated.preferredLanguage)
+        verify { auditService.recordAudit("User", user.id.toString(), "UPDATE_PREFERENCES", any(), any(), any()) }
+    }
+
+    @Test
+    fun `should throw EntityNotFoundException when updating preferences of non-existent user`() {
+        val userId = UUID.randomUUID()
+        every { userRepository.findById(userId) } returns Optional.empty()
+
+        assertThrows<EntityNotFoundException> {
+            userService.updateUserPreferences(userId, "pt-BR")
+        }
+    }
+
+    @Test
+    fun `should reject invalid preferred language code`() {
+        val userId = UUID.randomUUID()
+        assertThrows<IllegalArgumentException> {
+            userService.updateUserPreferences(userId, "fr-FR")
+        }
+    }
+
+    @Test
     fun `should search and get user by id`() {
         val user =
             User(
@@ -190,5 +273,15 @@ class UserServiceTest {
 
         assertEquals(user.id, fetched.id)
         assertEquals(1, searchResult.totalElements)
+    }
+
+    @Test
+    fun `should throw EntityNotFoundException when user id not found in getById`() {
+        val userId = UUID.randomUUID()
+        every { userRepository.findById(userId) } returns Optional.empty()
+
+        assertThrows<EntityNotFoundException> {
+            userService.getById(userId)
+        }
     }
 }

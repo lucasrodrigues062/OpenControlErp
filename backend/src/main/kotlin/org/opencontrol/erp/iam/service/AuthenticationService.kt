@@ -66,6 +66,7 @@ class AuthenticationService(
                 username = user.username,
                 email = user.email,
                 fullName = user.fullName,
+                preferredLanguage = user.preferredLanguage,
                 status = user.status.name,
                 profile =
                     ProfileSummaryDto(

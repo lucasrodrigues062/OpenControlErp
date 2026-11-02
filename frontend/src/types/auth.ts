@@ -3,6 +3,7 @@ export interface UserSummary {
   username: string;
   email: string;
   fullName: string;
+  preferredLanguage?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
   profile: {
     id: string;

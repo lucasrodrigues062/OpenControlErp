@@ -152,6 +152,39 @@ class UserService(
         return saved
     }
 
+    @Transactional
+    fun updateUserPreferences(
+        id: UUID,
+        preferredLanguage: String,
+    ): User {
+        if (preferredLanguage != "en-US" && preferredLanguage != "pt-BR") {
+            throw IllegalArgumentException("Unsupported language code: $preferredLanguage. Supported codes: en-US, pt-BR")
+        }
+
+        val user =
+            userRepository.findById(id).orElseThrow {
+                EntityNotFoundException("User not found with ID: $id")
+            }
+
+        val stateBefore = mapOf("preferredLanguage" to user.preferredLanguage)
+        user.preferredLanguage = preferredLanguage
+        user.updatedAt = Instant.now()
+
+        val saved = userRepository.save(user)
+
+        auditService.recordAudit(
+            entityType = "User",
+            entityId = saved.id.toString(),
+            action = "UPDATE_PREFERENCES",
+            details = "Updated preferred language to '$preferredLanguage'",
+            stateBefore = stateBefore,
+            stateAfter = mapOf("preferredLanguage" to saved.preferredLanguage),
+        )
+
+        logger.info("Updated preferences for user '{}' (language: {})", saved.username, preferredLanguage)
+        return saved
+    }
+
     @Transactional(readOnly = true)
     fun searchUsers(
         query: String?,

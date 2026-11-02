@@ -9,9 +9,11 @@ import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { PermissionGate } from '../components/common/PermissionGate';
+import { useI18n } from '../context/I18nContext';
 import { UserPlus, Search, Edit2, ShieldAlert } from 'lucide-react';
 
 export const UsersPage: React.FC = () => {
+  const { t } = useI18n();
   const [users, setUsers] = useState<User[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [query, setQuery] = useState('');
@@ -107,7 +109,7 @@ export const UsersPage: React.FC = () => {
       setIsModalOpen(false);
       loadData();
     } catch (err: any) {
-      setFormError(err.response?.data?.detail || 'Operation failed. Please verify inputs.');
+      setFormError(err.response?.data?.detail || t('common.actions'));
     } finally {
       setFormLoading(false);
     }
@@ -118,16 +120,16 @@ export const UsersPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            User Accounts
+            {t('iam.usersTitle')}
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Manage organization members and assign each user to their single access profile.
+            {t('iam.usersDescription')}
           </p>
         </div>
         <PermissionGate permission="USERS_WRITE">
           <Button onClick={handleOpenCreateModal} className="gap-2">
             <UserPlus className="h-4 w-4" />
-            New User
+            {t('iam.createUser')}
           </Button>
         </PermissionGate>
       </div>
@@ -136,13 +138,13 @@ export const UsersPage: React.FC = () => {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Registered Users</CardTitle>
-              <CardDescription>Total accounts: {users.length}</CardDescription>
+              <CardTitle>{t('iam.usersTitle')}</CardTitle>
+              <CardDescription>{t('common.actions')}: {users.length}</CardDescription>
             </div>
             <div className="relative w-64">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
               <Input
-                placeholder="Search by name, email, user..."
+                placeholder={t('common.search')}
                 className="pl-9 h-9"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -155,11 +157,11 @@ export const UsersPage: React.FC = () => {
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 uppercase text-[11px] font-semibold border-y">
                 <tr>
-                  <th className="py-3 px-4">User</th>
-                  <th className="py-3 px-4">Contact</th>
-                  <th className="py-3 px-4">Assigned Profile (1:N)</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-3 px-4">{t('auth.username')}</th>
+                  <th className="py-3 px-4">{t('iam.email')}</th>
+                  <th className="py-3 px-4">{t('iam.profile')}</th>
+                  <th className="py-3 px-4">{t('common.status')}</th>
+                  <th className="py-3 px-4 text-right">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -182,7 +184,7 @@ export const UsersPage: React.FC = () => {
                         variant={user.status === 'ACTIVE' ? 'success' : 'destructive'}
                         className="text-[11px]"
                       >
-                        {user.status}
+                        {user.status === 'ACTIVE' ? t('common.active') : t('common.inactive')}
                       </Badge>
                     </td>
                     <td className="py-3 px-4 text-right">
@@ -191,6 +193,7 @@ export const UsersPage: React.FC = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleOpenEditModal(user)}
+                          title={t('common.edit')}
                         >
                           <Edit2 className="h-4 w-4 text-slate-500 hover:text-primary" />
                         </Button>
@@ -201,7 +204,7 @@ export const UsersPage: React.FC = () => {
                 {users.length === 0 && !loading && (
                   <tr>
                     <td colSpan={5} className="py-8 text-center text-slate-500">
-                      No user accounts found matching the criteria.
+                      {t('common.noData')}
                     </td>
                   </tr>
                 )}
@@ -215,7 +218,7 @@ export const UsersPage: React.FC = () => {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingUser ? 'Edit User Details' : 'Create New User Account'}</DialogTitle>
+            <DialogTitle>{editingUser ? t('iam.editUser') : t('iam.createUser')}</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 py-2">
@@ -229,7 +232,7 @@ export const UsersPage: React.FC = () => {
             {!editingUser && (
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                  Username
+                  {t('auth.username')}
                 </label>
                 <Input
                   value={formData.username}
@@ -242,23 +245,25 @@ export const UsersPage: React.FC = () => {
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                Full Name
+                {t('iam.fullName')}
               </label>
               <Input
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                placeholder="e.g. Maria Souza"
+                placeholder={t('iam.fullNamePlaceholder')}
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Email</label>
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                {t('iam.email')}
+              </label>
               <Input
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="maria.souza@empresa.com.br"
+                placeholder={t('iam.emailPlaceholder')}
                 required
               />
             </div>
@@ -266,13 +271,13 @@ export const UsersPage: React.FC = () => {
             {!editingUser && (
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                  Initial Password
+                  {t('auth.password')}
                 </label>
                 <Input
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Minimum 6 characters"
+                  placeholder={t('auth.passwordPlaceholder')}
                   required
                 />
               </div>
@@ -280,7 +285,7 @@ export const UsersPage: React.FC = () => {
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                Single Assigned Profile
+                {t('iam.profile')}
               </label>
               <select
                 className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
@@ -290,36 +295,34 @@ export const UsersPage: React.FC = () => {
               >
                 {profiles.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} {p.isSystem ? '(System)' : ''}
+                    {p.name} {p.isSystem ? `(${t('common.system')})` : ''}
                   </option>
                 ))}
               </select>
-              <p className="text-[11px] text-slate-400">
-                Rule: A user is strictly assigned to exactly one profile.
-              </p>
             </div>
 
             {editingUser && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status</label>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                  {t('common.status')}
+                </label>
                 <select
                   className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
-                  <option value="SUSPENDED">SUSPENDED</option>
+                  <option value="ACTIVE">{t('common.active')}</option>
+                  <option value="INACTIVE">{t('common.inactive')}</option>
                 </select>
               </div>
             )}
 
             <DialogFooter className="pt-2">
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={formLoading}>
-                {formLoading ? 'Saving...' : editingUser ? 'Save Changes' : 'Create User'}
+                {formLoading ? t('common.loading') : t('common.save')}
               </Button>
             </DialogFooter>
           </form>

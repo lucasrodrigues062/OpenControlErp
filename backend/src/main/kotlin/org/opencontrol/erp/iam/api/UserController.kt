@@ -7,16 +7,20 @@ import org.opencontrol.erp.iam.api.dto.CreateUserRequest
 import org.opencontrol.erp.iam.api.dto.ProfileSummaryDto
 import org.opencontrol.erp.iam.api.dto.UpdateUserRequest
 import org.opencontrol.erp.iam.api.dto.UserPageResponse
+import org.opencontrol.erp.iam.api.dto.UserPreferencesRequest
+import org.opencontrol.erp.iam.api.dto.UserPreferencesResponse
 import org.opencontrol.erp.iam.api.dto.UserResponse
 import org.opencontrol.erp.iam.domain.User
 import org.opencontrol.erp.iam.domain.UserStatus
 import org.opencontrol.erp.iam.service.UserService
+import org.opencontrol.erp.kernel.context.SecurityContextHolder
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -102,12 +106,37 @@ class UserController(
         return ResponseEntity.ok(toResponse(updated))
     }
 
+    @PatchMapping("/me/preferences")
+    @Operation(summary = "Update authenticated user preferences")
+    fun updatePreferences(
+        @Valid @RequestBody request: UserPreferencesRequest,
+    ): ResponseEntity<UserPreferencesResponse> {
+        val userContext = SecurityContextHolder.getContext()
+        val userId =
+            userContext?.userId?.let {
+                try {
+                    UUID.fromString(it)
+                } catch (_: Exception) {
+                    null
+                }
+            } ?: throw IllegalStateException("No authenticated user context")
+
+        val updated = userService.updateUserPreferences(userId, request.preferredLanguage)
+        return ResponseEntity.ok(
+            UserPreferencesResponse(
+                userId = updated.id,
+                preferredLanguage = updated.preferredLanguage,
+            ),
+        )
+    }
+
     private fun toResponse(user: User): UserResponse =
         UserResponse(
             id = user.id,
             username = user.username,
             email = user.email,
             fullName = user.fullName,
+            preferredLanguage = user.preferredLanguage,
             status = user.status.name,
             profile =
                 ProfileSummaryDto(

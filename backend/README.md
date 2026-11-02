@@ -20,10 +20,11 @@ The OpenControl ERP Backend is an enterprise-grade Modular Monolith built with *
    - Asynchronous post-commit dispatch backed by PostgreSQL `event_outbox` table.
    - Automatic exponential backoff retries and Dead-Letter Queue (DLQ) isolation.
 
-4. **Identity & Access Management (IAM - Single-Profile RBAC)**:
+4. **Identity & Access Management (IAM - Single-Profile RBAC & Preferences)**:
    - User account lifecycle with cryptographic BCrypt password hashing.
    - Strict 1:N relationship from `Profile` to `User` (a user belongs to exactly one profile).
    - Granular system permission catalog (`USERS_READ`, `USERS_WRITE`, `PROFILES_MANAGE`, `AUDIT_READ`).
+   - Cross-device user preferences (`preferred_language` supporting `en-US` and `pt-BR`) via `PATCH /api/v1/iam/users/me/preferences`.
    - Stateless JWT authentication filter with claim extraction into `SecurityContextHolder`.
 
 5. **Unified Audit Trail**:
@@ -47,10 +48,3 @@ The OpenControl ERP Backend is an enterprise-grade Modular Monolith built with *
 
 When the application is running, Swagger UI is available at:
 `http://localhost:8080/swagger-ui.html`
-
-## Detailed Architectural Guides
-
-- [Extension Engine & Plugin Developer Manual](../docs/architecture/extension-engine.md)
-- [Project Constitution](../.specify/memory/constitution.md)
-- [Feature 001 Specification](../specs/001-extension-engine/spec.md)
-- [End-to-End Validation Quickstart](../specs/001-extension-engine/quickstart.md)

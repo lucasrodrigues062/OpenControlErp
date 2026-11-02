@@ -3,6 +3,7 @@ export interface User {
   username: string;
   email: string;
   fullName: string;
+  preferredLanguage?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
   profile: {
     id: string;
@@ -32,4 +33,14 @@ export interface UpdateUserPayload {
   fullName: string;
   status: string;
   profileId: string;
+}
+
+export interface UserPreferencesPayload {
+  preferredLanguage: string;
+}
+
+export interface UserPreferencesResponse {
+  userId: string;
+  preferredLanguage: string;
+  updatedAt: string;
 }

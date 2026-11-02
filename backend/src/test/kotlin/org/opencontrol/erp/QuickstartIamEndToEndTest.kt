@@ -75,6 +75,7 @@ class QuickstartIamEndToEndTest {
         assertEquals(username, user.username)
         assertEquals(profile.id, user.profile.id)
         assertEquals(UserStatus.ACTIVE, user.status)
+        assertEquals("en-US", user.preferredLanguage)
 
         // Scenario 3: Authenticate and Generate JWT
         val loginResponse =
@@ -85,6 +86,7 @@ class QuickstartIamEndToEndTest {
         assertEquals("Bearer", loginResponse.tokenType)
         assertEquals(username, loginResponse.user.username)
         assertEquals("Sales Operator $suffix", loginResponse.user.profile.name)
+        assertEquals("en-US", loginResponse.user.preferredLanguage)
         assertTrue(loginResponse.user.permissions?.contains("USERS_READ") == true)
 
         // Scenario 4: Automated Audit Trail Inspection
@@ -103,5 +105,15 @@ class QuickstartIamEndToEndTest {
         assertEquals("CREATE", userAudit.action)
         assertEquals("admin.$suffix", userAudit.actorUsername)
         assertNotNull(userAudit.stateAfter)
+
+        // Scenario 5: User Language Preference Update and Persistence
+        val updatedUser = userService.updateUserPreferences(user.id, "pt-BR")
+        assertEquals("pt-BR", updatedUser.preferredLanguage)
+
+        val prefLoginResponse =
+            authenticationService.login(
+                LoginRequest(username = username, password = "Password123!"),
+            )
+        assertEquals("pt-BR", prefLoginResponse.user.preferredLanguage)
     }
 }

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TranslationDictionarySchema",
+  "type": "object",
+  "required": ["common", "auth", "iam", "audit"],
+  "properties": {
+    "common": {
+      "type": "object",
+      "required": ["save", "cancel", "delete", "edit", "create", "search", "filter", "status", "actions", "loading", "active", "inactive", "system", "noData", "signOut", "dashboard", "language", "noAccessibleModules"],
+      "additionalProperties": { "type": "string" }
+    },
+    "auth": {
+      "type": "object",
+      "required": ["title", "subtitle", "username", "password", "signIn", "signingIn", "invalidCredentials"],
+      "additionalProperties": { "type": "string" }
+    },
+    "iam": {
+      "type": "object",
+      "required": ["usersTitle", "usersDescription", "createUser", "editUser", "fullName", "email", "profile", "profilesTitle", "profilesDescription", "createProfile", "editProfile", "profileName", "description", "permissions", "allowed", "restricted"],
+      "additionalProperties": { "type": "string" }
+    },
+    "audit": {
+      "type": "object",
+      "required": ["title", "description", "timestamp", "actor", "action", "entityType", "entityId", "stateBefore", "stateAfter", "noChanges", "details"],
+      "additionalProperties": { "type": "string" }
+    }
+  }
+}

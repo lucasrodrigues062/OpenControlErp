@@ -7,9 +7,11 @@ import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { PermissionGate } from '../components/common/PermissionGate';
+import { useI18n } from '../context/I18nContext';
 import { Shield, ShieldPlus, Trash2, Edit2, Users, AlertCircle } from 'lucide-react';
 
 export const ProfilesPage: React.FC = () => {
+  const { t } = useI18n();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [permissions, setPermissions] = useState<PermissionCatalogItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -91,7 +93,7 @@ export const ProfilesPage: React.FC = () => {
       setIsModalOpen(false);
       loadData();
     } catch (err: any) {
-      setFormError(err.response?.data?.detail || 'Operation failed. Verify profile data.');
+      setFormError(err.response?.data?.detail || t('common.actions'));
     } finally {
       setFormLoading(false);
     }
@@ -103,7 +105,7 @@ export const ProfilesPage: React.FC = () => {
       await profilesApi.deleteProfile(profile.id);
       loadData();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to delete profile.');
+      alert(err.response?.data?.detail || t('iam.cannotDeleteSystemProfile'));
     }
   };
 
@@ -115,16 +117,16 @@ export const ProfilesPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Access Profiles & Permissions
+            {t('iam.profilesTitle')}
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Define organizational roles and configure allowed vs restricted capabilities.
+            {t('iam.profilesDescription')}
           </p>
         </div>
         <PermissionGate permission="PROFILES_MANAGE">
           <Button onClick={handleOpenCreateModal} className="gap-2">
             <ShieldPlus className="h-4 w-4" />
-            New Profile
+            {t('iam.createProfile')}
           </Button>
         </PermissionGate>
       </div>
@@ -139,12 +141,12 @@ export const ProfilesPage: React.FC = () => {
                     <CardTitle className="text-lg font-bold">{profile.name}</CardTitle>
                     {profile.isSystem && (
                       <Badge variant="secondary" className="text-[10px]">
-                        System
+                        {t('common.system')}
                       </Badge>
                     )}
                   </div>
                   <CardDescription className="text-xs line-clamp-2">
-                    {profile.description || 'No description provided.'}
+                    {profile.description || t('common.noData')}
                   </CardDescription>
                 </div>
                 <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
@@ -156,11 +158,11 @@ export const ProfilesPage: React.FC = () => {
               <div className="flex items-center gap-4 text-xs text-slate-500 border-t border-b py-2.5">
                 <div className="flex items-center gap-1.5">
                   <Users className="h-3.5 w-3.5 text-slate-400" />
-                  <span>{profile.userCount || 0} user(s) assigned</span>
+                  <span>{profile.userCount || 0} user(s)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Shield className="h-3.5 w-3.5 text-slate-400" />
-                  <span>{profile.isSystem ? 'All' : profile.permissions.length} permissions</span>
+                  <span>{profile.isSystem ? t('common.all') : profile.permissions.length} {t('iam.permissions')}</span>
                 </div>
               </div>
 
@@ -173,7 +175,7 @@ export const ProfilesPage: React.FC = () => {
                     onClick={() => handleOpenEditModal(profile)}
                   >
                     <Edit2 className="h-3.5 w-3.5" />
-                    Configure
+                    {t('common.edit')}
                   </Button>
                   {!profile.isSystem && (
                     <Button
@@ -184,8 +186,8 @@ export const ProfilesPage: React.FC = () => {
                       disabled={(profile.userCount || 0) > 0}
                       title={
                         (profile.userCount || 0) > 0
-                          ? 'Cannot delete profile with assigned users'
-                          : 'Delete profile'
+                          ? t('iam.cannotDeleteSystemProfile')
+                          : t('common.delete')
                       }
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -202,7 +204,7 @@ export const ProfilesPage: React.FC = () => {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingProfile ? 'Configure Access Profile' : 'New Access Profile'}</DialogTitle>
+            <DialogTitle>{editingProfile ? t('iam.editProfile') : t('iam.createProfile')}</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 py-2">
@@ -215,31 +217,31 @@ export const ProfilesPage: React.FC = () => {
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                Profile Name
+                {t('iam.profileName')}
               </label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Sales Specialist"
+                placeholder={t('iam.profileNamePlaceholder')}
                 required
               />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                Description
+                {t('iam.description')}
               </label>
               <Input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Defines responsibilities and business capabilities"
+                placeholder={t('iam.descriptionPlaceholder')}
               />
             </div>
 
             {/* Permission Matrix */}
             <div className="space-y-3 pt-2">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Permission Matrix
+                {t('iam.permissions')}
               </label>
 
               <div className="max-h-72 overflow-y-auto space-y-4 border rounded-lg p-4 bg-slate-50/50 dark:bg-slate-900/50">
@@ -287,10 +289,10 @@ export const ProfilesPage: React.FC = () => {
 
             <DialogFooter className="pt-2">
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={formLoading}>
-                {formLoading ? 'Saving...' : editingProfile ? 'Save Permissions' : 'Create Profile'}
+                {formLoading ? t('common.loading') : t('common.save')}
               </Button>
             </DialogFooter>
           </form>

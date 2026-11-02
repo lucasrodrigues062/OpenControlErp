@@ -1,23 +1,28 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useI18n } from '../../context/I18nContext';
 import { Users, Shield, History, LogOut, LayoutDashboard, AlertCircle } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { LanguageSwitcher } from '../common/LanguageSwitcher';
 
 export const AppLayout: React.FC = () => {
   const { user, logout, hasPermission } = useAuth();
+  const { t } = useI18n();
   const location = useLocation();
 
   const navigation = [
-    { name: 'Users', href: '/users', icon: Users, permission: 'USERS_READ' },
-    { name: 'Profiles & Permissions', href: '/profiles', icon: Shield, permission: 'PROFILES_MANAGE' },
-    { name: 'Audit Trail', href: '/audit', icon: History, permission: 'AUDIT_READ' },
+    { nameKey: 'iam.usersTitle', defaultName: 'Users', href: '/users', icon: Users, permission: 'USERS_READ' },
+    { nameKey: 'iam.profilesTitle', defaultName: 'Profiles & Permissions', href: '/profiles', icon: Shield, permission: 'PROFILES_MANAGE' },
+    { nameKey: 'audit.title', defaultName: 'Audit Trail', href: '/audit', icon: History, permission: 'AUDIT_READ' },
   ];
 
   const visibleNavigation = navigation.filter(
     (item) => !item.permission || hasPermission(item.permission)
   );
+
+  const currentNav = navigation.find((n) => n.href === location.pathname);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row">
@@ -38,15 +43,16 @@ export const AppLayout: React.FC = () => {
             {visibleNavigation.length === 0 ? (
               <div className="px-3 py-4 text-xs text-slate-400 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-amber-500" />
-                <span>No accessible modules</span>
+                <span>{t('common.noAccessibleModules')}</span>
               </div>
             ) : (
               visibleNavigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
+                const localizedName = t(item.nameKey);
                 return (
                   <Link
-                    key={item.name}
+                    key={item.href}
                     to={item.href}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       isActive
@@ -55,7 +61,7 @@ export const AppLayout: React.FC = () => {
                     }`}
                   >
                     <Icon className="h-4 w-4" />
-                    {item.name}
+                    {localizedName}
                   </Link>
                 );
               })
@@ -76,7 +82,7 @@ export const AppLayout: React.FC = () => {
                 </Badge>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={logout} title="Sign Out">
+            <Button variant="ghost" size="icon" onClick={logout} title={t('common.signOut')}>
               <LogOut className="h-4 w-4 text-slate-500 hover:text-destructive" />
             </Button>
           </div>
@@ -89,10 +95,13 @@ export const AppLayout: React.FC = () => {
           <div className="flex items-center gap-2">
             <LayoutDashboard className="h-4 w-4 text-slate-400" />
             <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-              {visibleNavigation.find((n) => n.href === location.pathname)?.name || 'Dashboard'}
+              {currentNav ? t(currentNav.nameKey) : t('common.dashboard')}
             </span>
           </div>
-          <div className="text-xs text-slate-400">Jurisdiction: BR (Federal)</div>
+          <div className="flex items-center gap-4">
+            <div className="text-xs text-slate-400 hidden sm:block">{t('common.jurisdiction')}</div>
+            <LanguageSwitcher variant="full" />
+          </div>
         </header>
 
         <div className="p-6 md:p-8 max-w-7xl w-full mx-auto">
