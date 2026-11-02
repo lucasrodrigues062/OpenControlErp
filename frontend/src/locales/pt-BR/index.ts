@@ -1,4 +1,5 @@
 import { TranslationDictionary } from '../../types/i18n';
+import { rulesPtBR } from './rules';
 
 export const ptBR: TranslationDictionary = {
   common: {
@@ -84,4 +85,5 @@ export const ptBR: TranslationDictionary = {
     allEntities: 'Todas as Entidades',
     allActions: 'Todas as Ações',
   },
+  rules: rulesPtBR,
 };

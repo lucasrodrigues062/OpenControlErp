@@ -11,7 +11,11 @@ const dictionaries: Record<SupportedLanguage, TranslationDictionary> = {
 export interface I18nContextType {
   currentLanguage: SupportedLanguage;
   setLanguage: (lang: SupportedLanguage) => void;
-  t: (keyPath: string, params?: Record<string, string | number>) => string;
+  t: (
+    keyOrNamespace: string,
+    keyOrParams?: string | Record<string, string | number>,
+    params?: Record<string, string | number>
+  ) => string;
   formatDate: (date: Date | string | number, options?: Intl.DateTimeFormatOptions) => string;
   formatCurrency: (amount: number) => string;
   formatNumber: (amount: number) => string;
@@ -38,18 +42,35 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     document.documentElement.lang = currentLanguage;
   }, [currentLanguage]);
 
-  const t = (keyPath: string, params?: Record<string, string | number>): string => {
-    const [namespace, key] = keyPath.split('.') as [keyof TranslationDictionary, string];
+  const t = (
+    keyOrNamespace: string,
+    keyOrParams?: string | Record<string, string | number>,
+    params?: Record<string, string | number>
+  ): string => {
+    let namespace: keyof TranslationDictionary;
+    let key: string;
+    let actualParams = params;
+
+    if (typeof keyOrParams === 'string') {
+      namespace = keyOrNamespace as keyof TranslationDictionary;
+      key = keyOrParams;
+    } else {
+      const parts = keyOrNamespace.split('.');
+      namespace = parts[0] as keyof TranslationDictionary;
+      key = parts[1];
+      actualParams = keyOrParams;
+    }
+
     const dict = dictionaries[currentLanguage];
     const fallbackDict = dictionaries['en-US'];
 
     const targetNs = (dict?.[namespace] as unknown) as Record<string, string> | undefined;
     const fallbackNs = (fallbackDict?.[namespace] as unknown) as Record<string, string> | undefined;
 
-    let text = targetNs?.[key] ?? fallbackNs?.[key] ?? keyPath;
+    let text = targetNs?.[key] ?? fallbackNs?.[key] ?? keyOrNamespace;
 
-    if (params) {
-      Object.entries(params).forEach(([paramKey, val]) => {
+    if (actualParams) {
+      Object.entries(actualParams).forEach(([paramKey, val]) => {
         text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(val));
       });
     }

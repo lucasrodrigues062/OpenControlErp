@@ -139,6 +139,6 @@ class ProfileServiceTest {
 
         assertEquals(1, list.size)
         assertEquals(profile.id, fetched.id)
-        assertEquals(5, catalog.size)
+        assertEquals(7, catalog.size)
     }
 }

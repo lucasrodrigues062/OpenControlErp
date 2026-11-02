@@ -1,4 +1,5 @@
 import { TranslationDictionary } from '../../types/i18n';
+import { rulesEnUS } from './rules';
 
 export const enUS: TranslationDictionary = {
   common: {
@@ -84,4 +85,5 @@ export const enUS: TranslationDictionary = {
     allEntities: 'All Entities',
     allActions: 'All Actions',
   },
+  rules: rulesEnUS,
 };

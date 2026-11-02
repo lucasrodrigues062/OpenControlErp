@@ -98,9 +98,76 @@ export interface AuditTranslations {
   allActions: string;
 }
 
+export interface RulesTranslations {
+  title: string;
+  description: string;
+  createRule: string;
+  editRule: string;
+  deleteRule: string;
+  ruleName: string;
+  ruleNamePlaceholder: string;
+  ruleDescription: string;
+  ruleDescriptionPlaceholder: string;
+  trigger: string;
+  selectTrigger: string;
+  timing: string;
+  authoringMode: string;
+  visualMode: string;
+  dslMode: string;
+  condition: string;
+  action: string;
+  actionType: string;
+  actionPayload: string;
+  actionPayloadPlaceholder: string;
+  priority: string;
+  policy: string;
+  strictPolicy: string;
+  permissivePolicy: string;
+  testRule: string;
+  simulateBtn: string;
+  simulating: string;
+  simulationTitle: string;
+  simulationDescription: string;
+  contextJson: string;
+  simulatedResult: string;
+  matched: string;
+  notMatched: string;
+  executionError: string;
+  duration: string;
+  addCondition: string;
+  removeCondition: string;
+  field: string;
+  operator: string;
+  value: string;
+  viewTraces: string;
+  tracesTitle: string;
+  tracesDescription: string;
+  noRules: string;
+  noTraces: string;
+  ruleCreated: string;
+  ruleUpdated: string;
+  ruleDeleted: string;
+  toggleSuccess: string;
+  expand: string;
+  collapse: string;
+  fullscreen: string;
+  normalView: string;
+  addGroup: string;
+  generatedLogic: string;
+  fieldSuggestions: string;
+  searchField: string;
+  browseFields: string;
+  fieldCatalog: string;
+  fieldCatalogDesc: string;
+  allEntities: string;
+  dataType: string;
+  example: string;
+}
+
 export interface TranslationDictionary {
   common: CommonTranslations;
   auth: AuthTranslations;
   iam: IamTranslations;
   audit: AuditTranslations;
+  rules: RulesTranslations;
 }

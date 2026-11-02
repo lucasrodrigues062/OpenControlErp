@@ -9,6 +9,7 @@ import { LoginPage } from './pages/LoginPage';
 import { UsersPage } from './pages/UsersPage';
 import { ProfilesPage } from './pages/ProfilesPage';
 import { AuditPage } from './pages/AuditPage';
+import { RulesPage } from './pages/RulesPage';
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ const IndexRedirect: React.FC = () => {
 
   if (hasPermission('USERS_READ')) return <Navigate to="/users" replace />;
   if (hasPermission('PROFILES_MANAGE')) return <Navigate to="/profiles" replace />;
+  if (hasPermission('RULES_READ')) return <Navigate to="/rules" replace />;
   if (hasPermission('AUDIT_READ')) return <Navigate to="/audit" replace />;
 
   return (
@@ -47,6 +49,9 @@ export const App: React.FC = () => {
                   </Route>
                   <Route element={<ProtectedRoute requiredPermission="PROFILES_MANAGE" />}>
                     <Route path="/profiles" element={<ProfilesPage />} />
+                  </Route>
+                  <Route element={<ProtectedRoute requiredPermission="RULES_READ" />}>
+                    <Route path="/rules" element={<RulesPage />} />
                   </Route>
                   <Route element={<ProtectedRoute requiredPermission="AUDIT_READ" />}>
                     <Route path="/audit" element={<AuditPage />} />

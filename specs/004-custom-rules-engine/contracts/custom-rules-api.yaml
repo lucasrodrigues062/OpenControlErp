@@ -1,0 +1,226 @@
+openapi: 3.0.3
+info:
+  title: OpenControl ERP - Custom Business Rules Engine API
+  version: 1.0.0
+  description: REST API for configuring, testing, and monitoring custom business rules per tenant.
+paths:
+  /api/v1/rules:
+    get:
+      summary: List custom rules
+      description: Returns rules configured for the active tenant, with optional trigger and status filters.
+      parameters:
+        - name: triggerEvent
+          in: query
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomRuleResponse'
+    post:
+      summary: Create a custom business rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomRuleRequest'
+      responses:
+        '201':
+          description: Rule created successfully
+        '400':
+          description: Invalid syntax or duplicate rule name
+
+  /api/v1/rules/{id}:
+    get:
+      summary: Get rule by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Rule details
+        '404':
+          description: Rule not found
+    put:
+      summary: Update a custom business rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomRuleRequest'
+      responses:
+        '200':
+          description: Rule updated successfully
+    delete:
+      summary: Delete a custom business rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Rule deleted
+
+  /api/v1/rules/{id}/toggle:
+    patch:
+      summary: Toggle rule active/inactive state
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Status updated
+
+  /api/v1/rules/test:
+    post:
+      summary: Dry-run test a rule simulation
+      description: Evaluates condition expression against a sample JSON payload without persisting or modifying database state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestRuleRequest'
+      responses:
+        '200':
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRuleResponse'
+
+  /api/v1/rules/traces:
+    get:
+      summary: List rule execution traces
+      parameters:
+        - name: ruleId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution traces
+
+components:
+  schemas:
+    CustomRuleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        triggerEvent:
+          type: string
+        timing:
+          type: string
+          enum: [BEFORE, AFTER]
+        authoringMode:
+          type: string
+          enum: [VISUAL_BUILDER, ADVANCED_DSL]
+        conditionExpression:
+          type: string
+        actionType:
+          type: string
+        actionPayload:
+          type: string
+        priority:
+          type: integer
+        isActive:
+          type: boolean
+        errorHandlingPolicy:
+          type: string
+          enum: [ABORT_TRANSACTION, LOG_AND_CONTINUE]
+
+    CreateCustomRuleRequest:
+      type: object
+      required:
+        - name
+        - triggerEvent
+        - conditionExpression
+        - actionType
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        triggerEvent:
+          type: string
+        timing:
+          type: string
+          enum: [BEFORE, AFTER]
+        authoringMode:
+          type: string
+          enum: [VISUAL_BUILDER, ADVANCED_DSL]
+        conditionExpression:
+          type: string
+        actionType:
+          type: string
+        actionPayload:
+          type: string
+        priority:
+          type: integer
+        errorHandlingPolicy:
+          type: string
+          enum: [ABORT_TRANSACTION, LOG_AND_CONTINUE]
+
+    TestRuleRequest:
+      type: object
+      required:
+        - conditionExpression
+        - actionType
+        - payloadJson
+      properties:
+        conditionExpression:
+          type: string
+        actionType:
+          type: string
+        actionPayload:
+          type: string
+        payloadJson:
+          type: string
+
+    TestRuleResponse:
+      type: object
+      properties:
+        matched:
+          type: boolean
+        actionApplied:
+          type: string
+        durationMs:
+          type: integer
+        error:
+          type: string

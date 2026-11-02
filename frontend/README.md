@@ -18,16 +18,17 @@ Enterprise single-page application (SPA) providing an accessible, componentized,
 ```text
 frontend/
 ├── src/
-│   ├── api/          # Typed REST API clients (auth, users, profiles, audit)
+│   ├── api/          # Typed REST API clients (auth, users, profiles, audit, rules)
 │   ├── components/
 │   │   ├── common/   # LanguageSwitcher, PermissionGate, ProtectedRoute
 │   │   ├── layout/   # AppLayout (Sidebar, Header with LanguageSwitcher)
+│   │   ├── rules/    # VisualConditionBuilder, DslCodeEditor, RuleFormModal, RuleSimulationDrawer, RuleTracesModal
 │   │   └── ui/       # Button, Input, Card, Badge, Dialog, Drawer
 │   ├── context/      # AuthContext, I18nContext (t(), formatDate(), formatCurrency())
 │   ├── locales/      # Structured translation dictionaries (en-US, pt-BR)
 │   ├── lib/          # Utilities (cn / tailwind-merge)
-│   ├── pages/        # LoginPage, UsersPage, ProfilesPage, AuditPage
-│   └── types/        # TypeScript interfaces for IAM, Audit, and i18n
+│   ├── pages/        # LoginPage, UsersPage, ProfilesPage, AuditPage, RulesPage
+│   └── types/        # TypeScript interfaces for IAM, Audit, Rules, and i18n
 ├── index.html
 ├── tailwind.config.js
 └── vite.config.ts

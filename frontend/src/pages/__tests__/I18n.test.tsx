@@ -9,6 +9,7 @@ describe('I18n Catalogs & Formatting Logic', () => {
       auth: Object.keys(enUS.auth).sort(),
       iam: Object.keys(enUS.iam).sort(),
       audit: Object.keys(enUS.audit).sort(),
+      rules: Object.keys(enUS.rules).sort(),
     };
 
     const ptKeys = {
@@ -16,12 +17,14 @@ describe('I18n Catalogs & Formatting Logic', () => {
       auth: Object.keys(ptBR.auth).sort(),
       iam: Object.keys(ptBR.iam).sort(),
       audit: Object.keys(ptBR.audit).sort(),
+      rules: Object.keys(ptBR.rules).sort(),
     };
 
     expect(ptKeys.common).toEqual(enKeys.common);
     expect(ptKeys.auth).toEqual(enKeys.auth);
     expect(ptKeys.iam).toEqual(enKeys.iam);
     expect(ptKeys.audit).toEqual(enKeys.audit);
+    expect(ptKeys.rules).toEqual(enKeys.rules);
   });
 
   it('should format currency correctly according to locale standard', () => {

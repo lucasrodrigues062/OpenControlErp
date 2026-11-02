@@ -31,6 +31,13 @@ The OpenControl ERP Backend is an enterprise-grade Modular Monolith built with *
    - Immutable, append-only `audit_log` table storing actor identity, action type, entity type/ID, and timestamp.
    - Transaction-bound capture of before and after snapshots in PostgreSQL `JSONB`.
 
+6. **Dynamic Custom Business Rules Engine**:
+   - Multi-tenant rule configuration attached to lifecycle triggers (`sale.item_added`, `sale.finalized`, `financial.title_settled`, `product.created`, etc.).
+   - Hybrid authoring: Visual No-Code Builder (entity attributes, comparison operators, and action templates) + Advanced SpEL DSL expressions.
+   - Dual-timing hooks: Synchronous `BEFORE` transaction-blocking checks vs Asynchronous `AFTER` Virtual Thread events.
+   - Execution safety: Sandboxed SpEL via `SimpleEvaluationContext`, recursion guards ($\le 5$), timeout circuit breakers, and configurable failure policies (`ABORT_TRANSACTION` vs `LOG_AND_CONTINUE`).
+   - Dry-run simulation endpoint (`POST /api/v1/rules/test`) and persistent execution traces (`rule_execution_trace`).
+
 ## Building and Running
 
 ```bash

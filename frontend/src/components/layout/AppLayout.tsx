@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../context/I18nContext';
-import { Users, Shield, History, LogOut, LayoutDashboard, AlertCircle } from 'lucide-react';
+import { Users, Shield, History, LogOut, LayoutDashboard, AlertCircle, Sliders } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { LanguageSwitcher } from '../common/LanguageSwitcher';
@@ -15,6 +15,7 @@ export const AppLayout: React.FC = () => {
   const navigation = [
     { nameKey: 'iam.usersTitle', defaultName: 'Users', href: '/users', icon: Users, permission: 'USERS_READ' },
     { nameKey: 'iam.profilesTitle', defaultName: 'Profiles & Permissions', href: '/profiles', icon: Shield, permission: 'PROFILES_MANAGE' },
+    { nameKey: 'rules.title', defaultName: 'Custom Rules', href: '/rules', icon: Sliders, permission: 'RULES_READ' },
     { nameKey: 'audit.title', defaultName: 'Audit Trail', href: '/audit', icon: History, permission: 'AUDIT_READ' },
   ];
 

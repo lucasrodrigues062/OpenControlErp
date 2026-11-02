@@ -47,6 +47,18 @@ enum class SystemPermission(
         "View Audit Trail",
         "Allows searching and inspecting chronological audit log entries",
     ),
+    RULES_READ(
+        "RULES_READ",
+        "Business Rules",
+        "View Rules",
+        "Allows viewing and testing custom business rules and execution traces",
+    ),
+    RULES_MANAGE(
+        "RULES_MANAGE",
+        "Business Rules",
+        "Manage Rules",
+        "Allows creating, editing, and deleting custom business rules",
+    ),
 }
 
 @Embeddable
