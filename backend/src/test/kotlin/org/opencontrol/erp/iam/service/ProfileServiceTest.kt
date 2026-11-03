@@ -9,6 +9,7 @@ import org.junit.jupiter.api.assertThrows
 import org.opencontrol.erp.audit.domain.AuditLog
 import org.opencontrol.erp.audit.service.AuditService
 import org.opencontrol.erp.iam.domain.Profile
+import org.opencontrol.erp.iam.domain.SystemPermission
 import org.opencontrol.erp.iam.repository.ProfileRepository
 import org.opencontrol.erp.iam.repository.UserRepository
 import org.opencontrol.erp.kernel.context.SecurityContextHolder
@@ -143,6 +144,6 @@ class ProfileServiceTest {
 
         assertEquals(1, list.size)
         assertEquals(profile.id, fetched.id)
-        assertEquals(11, catalog.size)
+        assertEquals(SystemPermission.entries.size, catalog.size)
     }
 }

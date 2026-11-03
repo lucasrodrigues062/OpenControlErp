@@ -83,6 +83,24 @@ enum class SystemPermission(
         "Manage Companies and Branches",
         "Allows creating, updating, and deactivating companies, branches, fiscal settings, and digital certificates",
     ),
+    CRM_READ(
+        "CRM_READ",
+        "CRM",
+        "View CRM",
+        "Allows viewing customers, leads, pipelines, deals, and activities",
+    ),
+    CRM_WRITE(
+        "CRM_WRITE",
+        "CRM",
+        "Manage CRM",
+        "Allows creating, editing, and managing customers, leads, deals, and interactions",
+    ),
+    CRM_ADMIN(
+        "CRM_ADMIN",
+        "CRM",
+        "Administer CRM",
+        "Allows administering CRM pipelines, stages, categories, and economic groups",
+    ),
 }
 
 @Embeddable

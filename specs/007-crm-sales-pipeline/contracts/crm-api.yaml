@@ -1,0 +1,737 @@
+openapi: 3.0.3
+info:
+  title: OpenControl ERP - CRM, Leads & Sales Pipeline API
+  description: Public REST API contract for Customer Master Data, Categories, Economic Groups, Leads, Pipelines, Deals, and Timeline Activities.
+  version: 1.0.0
+servers:
+  - url: /api/v1/crm
+    description: Base CRM Module API
+
+paths:
+  /customers:
+    get:
+      summary: List customers with pagination and filtering
+      parameters:
+        - name: query
+          in: query
+          description: Search term (legal name, trade name, or document)
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [INDIVIDUAL, LEGAL_ENTITY]
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: economicGroupId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: activeOnly
+          in: query
+          schema:
+            type: boolean
+            default: true
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Paginated customer list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPageResponse'
+
+    post:
+      summary: Register a new customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerRequest'
+      responses:
+        '201':
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '400':
+          description: Validation error (e.g. invalid CPF/CNPJ check digits)
+        '409':
+          description: Duplicate document conflict within tenant
+
+  /customers/{id}:
+    get:
+      summary: Get customer by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Customer details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '404':
+          description: Customer not found
+    put:
+      summary: Update customer details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerRequest'
+      responses:
+        '200':
+          description: Customer updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '404':
+          description: Customer not found
+
+  /customer-categories:
+    get:
+      summary: List all customer categories
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomerCategoryResponse'
+    post:
+      summary: Create a customer category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerCategoryRequest'
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerCategoryResponse'
+
+  /economic-groups:
+    get:
+      summary: List all economic groups
+      responses:
+        '200':
+          description: List of economic groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EconomicGroupResponse'
+    post:
+      summary: Create an economic group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEconomicGroupRequest'
+      responses:
+        '201':
+          description: Economic group created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EconomicGroupResponse'
+
+  /leads:
+    get:
+      summary: List leads with filters
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [NEW, IN_QUALIFICATION, QUALIFIED, DISQUALIFIED, CONVERTED]
+        - name: source
+          in: query
+          schema:
+            type: string
+        - name: assignedUserId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of leads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeadResponse'
+    post:
+      summary: Create a new prospect lead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLeadRequest'
+      responses:
+        '201':
+          description: Lead created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadResponse'
+
+  /leads/{id}/disqualify:
+    post:
+      summary: Disqualify a lead with recorded reason
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  example: "No budget available this fiscal year"
+      responses:
+        '200':
+          description: Lead marked as disqualified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadResponse'
+
+  /leads/{id}/convert:
+    post:
+      summary: Convert qualified lead into Customer and Deal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConvertLeadRequest'
+      responses:
+        '200':
+          description: Lead converted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadConversionResponse'
+
+  /pipelines:
+    get:
+      summary: List sales pipelines and their ordered stages
+      responses:
+        '200':
+          description: Pipelines with stages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SalesPipelineResponse'
+    post:
+      summary: Create sales pipeline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePipelineRequest'
+      responses:
+        '201':
+          description: Pipeline created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesPipelineResponse'
+
+  /deals:
+    get:
+      summary: List deals (for Kanban board or list view)
+      parameters:
+        - name: pipelineId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: stageId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [OPEN, WON, LOST]
+        - name: assignedUserId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Deals matching filter
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DealResponse'
+    post:
+      summary: Create new deal / opportunity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDealRequest'
+      responses:
+        '201':
+          description: Deal created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+
+  /deals/{id}/stage:
+    patch:
+      summary: Move deal to a new stage (Drag & Drop)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stageId]
+              properties:
+                stageId:
+                  type: string
+                  format: uuid
+                lossReason:
+                  type: string
+                  description: Mandatory if destination stage is marked as LOST
+      responses:
+        '200':
+          description: Deal stage updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealResponse'
+
+  /deals/metrics:
+    get:
+      summary: Get aggregate pipeline metrics
+      parameters:
+        - name: pipelineId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Aggregated funnel values and conversion metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineMetricsResponse'
+
+  /activities:
+    get:
+      summary: List timeline activities for an entity
+      parameters:
+        - name: entityType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [CUSTOMER, LEAD, DEAL]
+        - name: entityId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of chronological activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CrmActivityResponse'
+    post:
+      summary: Log new activity or interaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCrmActivityRequest'
+      responses:
+        '201':
+          description: Activity logged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmActivityResponse'
+
+components:
+  schemas:
+    CustomerResponse:
+      type: object
+      required: [id, tenantId, type, document, legalName, isActive]
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        branchId: { type: string, format: uuid, nullable: true }
+        type: { type: string, enum: [INDIVIDUAL, LEGAL_ENTITY] }
+        document: { type: string, example: "53066208000170" }
+        formattedDocument: { type: string, example: "53.066.208/0001-70" }
+        legalName: { type: string, example: "Sym Soluções em Tecnologia Ltda" }
+        tradeName: { type: string, nullable: true, example: "Sym Tech" }
+        stateRegistration: { type: string, nullable: true }
+        isStateRegistrationExempt: { type: boolean }
+        municipalRegistration: { type: string, nullable: true }
+        icmsTaxpayerType: { type: string, enum: [CONTRIBUTOR, NON_CONTRIBUTOR, EXEMPT] }
+        phone1: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        contactPerson: { type: string, nullable: true }
+        categoryId: { type: string, format: uuid, nullable: true }
+        categoryName: { type: string, nullable: true }
+        economicGroupId: { type: string, format: uuid, nullable: true }
+        economicGroupName: { type: string, nullable: true }
+        creditLimit: { type: number, example: 50000.00 }
+        creditStatus: { type: string, enum: [APPROVED, SUSPENDED, BLOCKED] }
+        postalCode: { type: string, nullable: true }
+        street: { type: string, nullable: true }
+        number: { type: string, nullable: true }
+        neighborhood: { type: string, nullable: true }
+        cityName: { type: string, nullable: true }
+        stateCode: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CustomerPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomerResponse'
+        totalElements: { type: integer }
+        totalPages: { type: integer }
+        size: { type: integer }
+        number: { type: integer }
+
+    CreateCustomerRequest:
+      type: object
+      required: [type, document, legalName]
+      properties:
+        type: { type: string, enum: [INDIVIDUAL, LEGAL_ENTITY] }
+        document: { type: string, description: "CPF (11) or CNPJ (14), unmasked or masked" }
+        legalName: { type: string }
+        tradeName: { type: string }
+        stateRegistration: { type: string }
+        isStateRegistrationExempt: { type: boolean, default: false }
+        municipalRegistration: { type: string }
+        icmsTaxpayerType: { type: string, enum: [CONTRIBUTOR, NON_CONTRIBUTOR, EXEMPT], default: NON_CONTRIBUTOR }
+        phone1: { type: string }
+        email: { type: string }
+        contactPerson: { type: string }
+        categoryId: { type: string, format: uuid }
+        economicGroupId: { type: string, format: uuid }
+        branchId: { type: string, format: uuid }
+        creditLimit: { type: number, default: 0.00 }
+        postalCode: { type: string }
+        street: { type: string }
+        number: { type: string }
+        complement: { type: string }
+        neighborhood: { type: string }
+        cityName: { type: string }
+        cityIbgeCode: { type: integer }
+        stateCode: { type: string }
+
+    UpdateCustomerRequest:
+      type: object
+      required: [legalName]
+      properties:
+        legalName: { type: string }
+        tradeName: { type: string }
+        stateRegistration: { type: string }
+        isStateRegistrationExempt: { type: boolean }
+        municipalRegistration: { type: string }
+        icmsTaxpayerType: { type: string }
+        phone1: { type: string }
+        email: { type: string }
+        contactPerson: { type: string }
+        categoryId: { type: string, format: uuid }
+        economicGroupId: { type: string, format: uuid }
+        creditLimit: { type: number }
+        creditStatus: { type: string }
+        postalCode: { type: string }
+        street: { type: string }
+        number: { type: string }
+        complement: { type: string }
+        neighborhood: { type: string }
+        cityName: { type: string }
+        stateCode: { type: string }
+        isActive: { type: boolean }
+
+    CustomerCategoryResponse:
+      type: object
+      required: [id, code, name, colorHex]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        colorHex: { type: string }
+        defaultDiscountPct: { type: number }
+        isActive: { type: boolean }
+
+    CreateCustomerCategoryRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string }
+        name: { type: string }
+        colorHex: { type: string, default: "#3B82F6" }
+        defaultDiscountPct: { type: number, default: 0.00 }
+
+    EconomicGroupResponse:
+      type: object
+      required: [id, code, name]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        holdingCnpj: { type: string, nullable: true }
+        consolidatedCreditLimit: { type: number }
+        isActive: { type: boolean }
+
+    CreateEconomicGroupRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string }
+        name: { type: string }
+        holdingCnpj: { type: string }
+        consolidatedCreditLimit: { type: number, default: 0.00 }
+
+    LeadResponse:
+      type: object
+      required: [id, name, status, source]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        companyName: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        source: { type: string }
+        status: { type: string, enum: [NEW, IN_QUALIFICATION, QUALIFIED, DISQUALIFIED, CONVERTED] }
+        estimatedBudget: { type: number }
+        interestSummary: { type: string, nullable: true }
+        disqualificationReason: { type: string, nullable: true }
+        convertedCustomerId: { type: string, format: uuid, nullable: true }
+        convertedDealId: { type: string, format: uuid, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    CreateLeadRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        companyName: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        source: { type: string, default: "WEBSITE" }
+        estimatedBudget: { type: number }
+        interestSummary: { type: string }
+        assignedUserId: { type: string, format: uuid }
+        branchId: { type: string, format: uuid }
+
+    ConvertLeadRequest:
+      type: object
+      required: [customerType, customerDocument, dealTitle, pipelineId, stageId]
+      properties:
+        customerType: { type: string, enum: [INDIVIDUAL, LEGAL_ENTITY] }
+        customerDocument: { type: string }
+        customerLegalName: { type: string }
+        dealTitle: { type: string }
+        dealEstimatedValue: { type: number }
+        pipelineId: { type: string, format: uuid }
+        stageId: { type: string, format: uuid }
+
+    LeadConversionResponse:
+      type: object
+      required: [leadId, customerId, dealId]
+      properties:
+        leadId: { type: string, format: uuid }
+        customerId: { type: string, format: uuid }
+        dealId: { type: string, format: uuid }
+
+    SalesPipelineResponse:
+      type: object
+      required: [id, code, name, stages]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        isDefault: { type: boolean }
+        isActive: { type: boolean }
+        stages:
+          type: array
+          items:
+            $ref: '#/components/schemas/PipelineStageResponse'
+
+    PipelineStageResponse:
+      type: object
+      required: [id, name, orderIndex, winProbabilityPct, colorHex, stageType]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        orderIndex: { type: integer }
+        winProbabilityPct: { type: integer }
+        colorHex: { type: string }
+        maxStagnantDays: { type: integer }
+        stageType: { type: string, enum: [IN_PROGRESS, WON, LOST] }
+
+    CreatePipelineRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string }
+        name: { type: string }
+        isDefault: { type: boolean }
+
+    DealResponse:
+      type: object
+      required: [id, title, pipelineId, stageId, customerId, status, estimatedValue]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        pipelineId: { type: string, format: uuid }
+        stageId: { type: string, format: uuid }
+        stageName: { type: string }
+        customerId: { type: string, format: uuid }
+        customerName: { type: string }
+        estimatedValue: { type: number }
+        currency: { type: string }
+        expectedCloseDate: { type: string, format: date, nullable: true }
+        status: { type: string, enum: [OPEN, WON, LOST] }
+        lossReason: { type: string, nullable: true }
+        assignedUserId: { type: string, format: uuid, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    CreateDealRequest:
+      type: object
+      required: [title, pipelineId, stageId, customerId, estimatedValue]
+      properties:
+        title: { type: string }
+        pipelineId: { type: string, format: uuid }
+        stageId: { type: string, format: uuid }
+        customerId: { type: string, format: uuid }
+        leadId: { type: string, format: uuid }
+        estimatedValue: { type: number }
+        expectedCloseDate: { type: string, format: date }
+        assignedUserId: { type: string, format: uuid }
+        branchId: { type: string, format: uuid }
+
+    PipelineMetricsResponse:
+      type: object
+      required: [totalOpenDeals, totalPipelineValue, weightedPipelineValue, winRatePct]
+      properties:
+        totalOpenDeals: { type: integer }
+        totalPipelineValue: { type: number }
+        weightedPipelineValue: { type: number }
+        winRatePct: { type: number }
+
+    CrmActivityResponse:
+      type: object
+      required: [id, entityType, entityId, activityType, summary, performedAt]
+      properties:
+        id: { type: string, format: uuid }
+        entityType: { type: string, enum: [CUSTOMER, LEAD, DEAL] }
+        entityId: { type: string, format: uuid }
+        activityType: { type: string, enum: [NOTE, CALL, MEETING, WHATSAPP, TASK] }
+        summary: { type: string }
+        description: { type: string, nullable: true }
+        performedAt: { type: string, format: date-time }
+        dueDate: { type: string, format: date-time, nullable: true }
+        isCompleted: { type: boolean }
+        authorUserId: { type: string, format: uuid, nullable: true }
+
+    CreateCrmActivityRequest:
+      type: object
+      required: [entityType, entityId, activityType, summary]
+      properties:
+        entityType: { type: string, enum: [CUSTOMER, LEAD, DEAL] }
+        entityId: { type: string, format: uuid }
+        activityType: { type: string, enum: [NOTE, CALL, MEETING, WHATSAPP, TASK] }
+        summary: { type: string }
+        description: { type: string }
+        performedAt: { type: string, format: date-time }
+        dueDate: { type: string, format: date-time }

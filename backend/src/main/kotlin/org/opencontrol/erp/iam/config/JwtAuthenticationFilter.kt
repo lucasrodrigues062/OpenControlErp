@@ -3,6 +3,7 @@ package org.opencontrol.erp.iam.config
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.opencontrol.erp.iam.domain.SystemPermission
 import org.opencontrol.erp.iam.service.JwtService
 import org.opencontrol.erp.kernel.context.SecurityContextHolder
 import org.opencontrol.erp.kernel.context.TenantContext
@@ -38,10 +39,19 @@ class JwtAuthenticationFilter(
                 val userId = claims["userId"]?.toString() ?: ""
                 val tenantIdStr = claims["tenantId"]?.toString() ?: "00000000-0000-0000-0000-000000000000"
                 val tenantId = UUID.fromString(tenantIdStr)
+                val profileName = claims["profile"]?.toString() ?: ""
 
                 @Suppress("UNCHECKED_CAST")
                 val permissionsList = (claims["permissions"] as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
-                val authorities = permissionsList.map { SimpleGrantedAuthority(it) }
+
+                val effectivePermissions = permissionsList.toMutableSet()
+                if (profileName.equals("Administrator", ignoreCase = true)) {
+                    SystemPermission.entries.forEach {
+                        effectivePermissions.add(it.code)
+                    }
+                }
+
+                val authorities = effectivePermissions.map { SimpleGrantedAuthority(it) }
 
                 val authToken = UsernamePasswordAuthenticationToken(username, null, authorities)
                 SpringSecurityContextHolder.getContext().authentication = authToken
@@ -50,7 +60,7 @@ class JwtAuthenticationFilter(
                     UserContext(
                         userId = userId,
                         username = username,
-                        roles = permissionsList.toSet(),
+                        roles = effectivePermissions,
                         tenant =
                             TenantContext(
                                 tenantId = tenantId,

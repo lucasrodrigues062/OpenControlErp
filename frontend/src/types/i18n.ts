@@ -172,4 +172,5 @@ export interface TranslationDictionary {
   rules: RulesTranslations;
   customFields: import('../locales/en-US/customFields').CustomFieldsTranslations;
   companies: import('../locales/en-US/companies').CompaniesTranslations;
+  crm: import('../locales/en-US/crm').CrmTranslations;
 }

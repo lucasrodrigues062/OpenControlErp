@@ -13,6 +13,10 @@ import { AuditPage } from './pages/AuditPage';
 import { RulesPage } from './pages/RulesPage';
 import { CustomFieldsSettingsPage } from './pages/CustomFieldsSettingsPage';
 import { CompaniesPage } from './pages/CompaniesPage';
+import { CustomersPage } from './pages/crm/CustomersPage';
+import { CustomerDetailPage } from './pages/crm/CustomerDetailPage';
+import { LeadsPage } from './pages/crm/LeadsPage';
+import { SalesPipelinePage } from './pages/crm/SalesPipelinePage';
 
 const queryClient = new QueryClient();
 
@@ -21,6 +25,7 @@ const IndexRedirect: React.FC = () => {
   const { t } = useI18n();
 
   if (hasPermission('COMPANIES_READ')) return <Navigate to="/companies" replace />;
+  if (hasPermission('CRM_READ')) return <Navigate to="/crm/customers" replace />;
   if (hasPermission('USERS_READ')) return <Navigate to="/users" replace />;
   if (hasPermission('PROFILES_MANAGE')) return <Navigate to="/profiles" replace />;
   if (hasPermission('RULES_READ')) return <Navigate to="/rules" replace />;
@@ -51,6 +56,12 @@ export const App: React.FC = () => {
                     <Route index element={<IndexRedirect />} />
                     <Route element={<ProtectedRoute requiredPermission="COMPANIES_READ" />}>
                       <Route path="/companies" element={<CompaniesPage />} />
+                    </Route>
+                    <Route element={<ProtectedRoute requiredPermission="CRM_READ" />}>
+                      <Route path="/crm/customers" element={<CustomersPage />} />
+                      <Route path="/crm/customers/:id" element={<CustomerDetailPage />} />
+                      <Route path="/crm/leads" element={<LeadsPage />} />
+                      <Route path="/crm/pipeline" element={<SalesPipelinePage />} />
                     </Route>
                     <Route element={<ProtectedRoute requiredPermission="USERS_READ" />}>
                       <Route path="/users" element={<UsersPage />} />
