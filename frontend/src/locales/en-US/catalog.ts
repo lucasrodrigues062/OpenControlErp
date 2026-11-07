@@ -1,0 +1,16 @@
+export const catalogEnUS = {
+  title: 'Catalog & Pricing',
+  productsTitle: 'Products & Services',
+  categoriesTitle: 'Categories',
+  pricesTitle: 'Price Lists',
+  newProduct: 'New Product',
+  newCategory: 'New Category',
+  newPriceList: 'New Price List',
+  sku: 'SKU / Code',
+  barcode: 'Barcode (EAN)',
+  unitOfMeasure: 'Unit of Measure',
+  ncm: 'NCM (8 Digits)',
+  cest: 'CEST',
+  origin: 'Goods Origin',
+  averageCost: 'Average Cost (CMP)',
+};

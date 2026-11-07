@@ -3,6 +3,8 @@ import { rulesEnUS } from './rules';
 import { customFieldsEnUS } from './customFields';
 import { companiesEnUS } from './companies';
 import { crmEnUS } from './crm';
+import { catalogEnUS } from './catalog';
+import { inventoryEnUS } from './inventory';
 
 export const enUS: TranslationDictionary = {
   common: {
@@ -92,4 +94,6 @@ export const enUS: TranslationDictionary = {
   customFields: customFieldsEnUS,
   companies: companiesEnUS,
   crm: crmEnUS,
+  catalog: catalogEnUS,
+  inventory: inventoryEnUS,
 };

@@ -3,6 +3,8 @@ import { rulesPtBR } from './rules';
 import { customFieldsPtBR } from './customFields';
 import { companiesPtBR } from './companies';
 import { crmPtBR } from './crm';
+import { catalogPtBR } from './catalog';
+import { inventoryPtBR } from './inventory';
 
 export const ptBR: TranslationDictionary = {
   common: {
@@ -92,4 +94,6 @@ export const ptBR: TranslationDictionary = {
   customFields: customFieldsPtBR,
   companies: companiesPtBR,
   crm: crmPtBR,
+  catalog: catalogPtBR,
+  inventory: inventoryPtBR,
 };

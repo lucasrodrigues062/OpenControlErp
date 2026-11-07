@@ -1,0 +1,826 @@
+openapi: 3.0.3
+info:
+  title: OpenControl ERP - Product Catalog, Pricing & Inventory API
+  description: RESTful API contracts for Master Data Catalog, Brazilian Taxation, Multi-Warehouse Inventory, Traceability (Lots/Serials), and Kardex Ledgers.
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Current Base Path
+
+paths:
+  # ==========================================
+  # CATEGORIES
+  # ==========================================
+  /catalog/categories:
+    get:
+      summary: List hierarchical product categories
+      tags: [Catalog - Categories]
+      parameters:
+        - name: parentId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: activeOnly
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductCategoryResponse'
+    post:
+      summary: Create a product category
+      tags: [Catalog - Categories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductCategoryRequest'
+      responses:
+        '210':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductCategoryResponse'
+
+  # ==========================================
+  # PRODUCTS
+  # ==========================================
+  /catalog/products:
+    get:
+      summary: Search and list products
+      tags: [Catalog - Products]
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: ncm
+          in: query
+          schema:
+            type: string
+        - name: trackingMode
+          in: query
+          schema:
+            type: string
+            enum: [NONE, BATCH_LOT, SERIAL_NUMBER]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Paginated product list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPageResponse'
+    post:
+      summary: Create a new product
+      tags: [Catalog - Products]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+
+  /catalog/products/{id}:
+    get:
+      summary: Get product by ID
+      tags: [Catalog - Products]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+    put:
+      summary: Update product details
+      tags: [Catalog - Products]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '200':
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+
+  # ==========================================
+  # WAREHOUSES & LOCATIONS
+  # ==========================================
+  /inventory/warehouses:
+    get:
+      summary: List warehouses
+      tags: [Inventory - Warehouses]
+      parameters:
+        - name: branchId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of warehouses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WarehouseResponse'
+    post:
+      summary: Create warehouse
+      tags: [Inventory - Warehouses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWarehouseRequest'
+      responses:
+        '201':
+          description: Warehouse created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseResponse'
+
+  /inventory/warehouses/{id}/locations:
+    get:
+      summary: List logistical bin addresses inside warehouse
+      tags: [Inventory - Warehouses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of storage bin locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StorageLocationResponse'
+    post:
+      summary: Create logistical bin address
+      tags: [Inventory - Warehouses]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStorageLocationRequest'
+      responses:
+        '201':
+          description: Storage location created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageLocationResponse'
+
+  # ==========================================
+  # STOCK BALANCES & MOVEMENTS (KARDEX)
+  # ==========================================
+  /inventory/balances:
+    get:
+      summary: Query stock balances
+      tags: [Inventory - Stock Balances]
+      parameters:
+        - name: productId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: warehouseId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: belowMinimum
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Stock balances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockBalanceResponse'
+
+  /inventory/movements:
+    get:
+      summary: Query immutable Kardex inventory transactions
+      tags: [Inventory - Movements & Kardex]
+      parameters:
+        - name: productId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: warehouseId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: movementType
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Paginated Kardex ledger
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockMovementPageResponse'
+    post:
+      summary: Post a manual stock transaction (adjustment, transfer, receipt)
+      tags: [Inventory - Movements & Kardex]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStockMovementRequest'
+      responses:
+        '201':
+          description: Movement confirmed and balances updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockMovementResponse'
+
+  # ==========================================
+  # LOTS & SERIAL NUMBERS
+  # ==========================================
+  /inventory/lots:
+    get:
+      summary: Query product lots (FEFO ordering)
+      tags: [Inventory - Traceability]
+      parameters:
+        - name: productId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: warehouseId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: availableOnly
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Lots ordered by expiration date ASC
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductLotResponse'
+
+  /inventory/serial-numbers:
+    get:
+      summary: Query product serial numbers
+      tags: [Inventory - Traceability]
+      parameters:
+        - name: productId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: serialNumber
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Serial numbers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductSerialNumberResponse'
+
+components:
+  schemas:
+    # ----------------------------------------
+    # Product Schemas
+    # ----------------------------------------
+    CreateProductRequest:
+      type: object
+      required: [sku, name, itemType, unitOfMeasure, categoryId, ncm, origin]
+      properties:
+        sku:
+          type: string
+          example: PROD-001
+        barcode:
+          type: string
+          example: "7891234567890"
+        name:
+          type: string
+          example: Parafuso Sextavado Aço Inox 316
+        description:
+          type: string
+        itemType:
+          type: string
+          example: REV_00
+        unitOfMeasure:
+          type: string
+          example: UN
+        categoryId:
+          type: string
+          format: uuid
+        brand:
+          type: string
+        model:
+          type: string
+        ncm:
+          type: string
+          pattern: '^[0-9]{8}$'
+          example: "73181500"
+        ncmException:
+          type: string
+        cest:
+          type: string
+          pattern: '^[0-9]{7}$'
+          example: "0100100"
+        origin:
+          type: integer
+          minimum: 0
+          maximum: 8
+          example: 0
+        trackingMode:
+          type: string
+          enum: [NONE, BATCH_LOT, SERIAL_NUMBER]
+          default: NONE
+        minStock:
+          type: number
+          default: 0
+        maxStock:
+          type: number
+        reorderPoint:
+          type: number
+        standardSalesPrice:
+          type: number
+          example: 12.50
+        acquisitionCost:
+          type: number
+          example: 6.20
+
+    UpdateProductRequest:
+      type: object
+      required: [name, unitOfMeasure, categoryId, ncm, origin]
+      properties:
+        barcode:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        unitOfMeasure:
+          type: string
+        categoryId:
+          type: string
+          format: uuid
+        brand:
+          type: string
+        model:
+          type: string
+        ncm:
+          type: string
+        cest:
+          type: string
+        origin:
+          type: integer
+        minStock:
+          type: number
+        maxStock:
+          type: number
+        reorderPoint:
+          type: number
+        isActive:
+          type: boolean
+
+    ProductResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        barcode:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        itemType:
+          type: string
+        unitOfMeasure:
+          type: string
+        categoryId:
+          type: string
+          format: uuid
+        categoryName:
+          type: string
+        brand:
+          type: string
+        ncm:
+          type: string
+        cest:
+          type: string
+        origin:
+          type: integer
+        trackingMode:
+          type: string
+        minStock:
+          type: number
+        maxStock:
+          type: number
+        reorderPoint:
+          type: number
+        lastAcquisitionCost:
+          type: number
+        averageCost:
+          type: number
+        standardSalesPrice:
+          type: number
+        isActive:
+          type: boolean
+
+    ProductPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductResponse'
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+        pageNumber:
+          type: integer
+
+    # ----------------------------------------
+    # Category Schemas
+    # ----------------------------------------
+    CreateProductCategoryRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        parentId:
+          type: string
+          format: uuid
+        colorHex:
+          type: string
+          default: "#6366F1"
+
+    ProductCategoryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        parentId:
+          type: string
+          format: uuid
+        colorHex:
+          type: string
+        isActive:
+          type: boolean
+
+    # ----------------------------------------
+    # Warehouse & Location Schemas
+    # ----------------------------------------
+    CreateWarehouseRequest:
+      type: object
+      required: [code, name, branchId, warehouseType]
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        branchId:
+          type: string
+          format: uuid
+        warehouseType:
+          type: string
+          enum: [COMMERCIAL, STORAGE, QUARANTINE, TRANSIT]
+        isDefault:
+          type: boolean
+          default: false
+
+    WarehouseResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        branchId:
+          type: string
+          format: uuid
+        warehouseType:
+          type: string
+        isDefault:
+          type: boolean
+        isActive:
+          type: boolean
+
+    CreateStorageLocationRequest:
+      type: object
+      required: [aisle, rack, shelf, bin]
+      properties:
+        aisle:
+          type: string
+          example: "A"
+        rack:
+          type: string
+          example: "02"
+        shelf:
+          type: string
+          example: "03"
+        bin:
+          type: string
+          example: "01"
+
+    StorageLocationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        aisle:
+          type: string
+        rack:
+          type: string
+        shelf:
+          type: string
+        bin:
+          type: string
+        formattedAddress:
+          type: string
+          example: "A-02-03-01"
+        isActive:
+          type: boolean
+
+    # ----------------------------------------
+    # Stock Balance & Movement Schemas
+    # ----------------------------------------
+    StockBalanceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        productSku:
+          type: string
+        productName:
+          type: string
+        warehouseId:
+          type: string
+          format: uuid
+        warehouseName:
+          type: string
+        locationAddress:
+          type: string
+        quantityOnHand:
+          type: number
+        quantityReserved:
+          type: number
+        quantityAvailable:
+          type: number
+
+    CreateStockMovementRequest:
+      type: object
+      required: [productId, movementType, quantity]
+      properties:
+        productId:
+          type: string
+          format: uuid
+        movementType:
+          type: string
+          enum: [INBOUND_PURCHASE, OUTBOUND_SALE, TRANSFER_OUT, TRANSFER_IN, ADJUSTMENT_INVENTORY]
+        sourceWarehouseId:
+          type: string
+          format: uuid
+        destinationWarehouseId:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        lotNumber:
+          type: string
+        manufacturingDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        serialNumbers:
+          type: array
+          items:
+            type: string
+        quantity:
+          type: number
+          minimum: 0.0001
+        unitCost:
+          type: number
+        reasonCode:
+          type: string
+        notes:
+          type: string
+
+    StockMovementResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        movementType:
+          type: string
+        quantity:
+          type: number
+        unitCost:
+          type: number
+        balanceAfter:
+          type: number
+        sourceWarehouseName:
+          type: string
+        destinationWarehouseName:
+          type: string
+        reasonCode:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    StockMovementPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockMovementResponse'
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+
+    # ----------------------------------------
+    # Traceability Schemas
+    # ----------------------------------------
+    ProductLotResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        lotNumber:
+          type: string
+        manufacturingDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        quantityOnHand:
+          type: number
+        quantityReserved:
+          type: number
+        status:
+          type: string
+
+    ProductSerialNumberResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        serialNumber:
+          type: string
+        status:
+          type: string
+        warrantyUntil:
+          type: string
+          format: date

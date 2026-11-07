@@ -173,4 +173,6 @@ export interface TranslationDictionary {
   customFields: import('../locales/en-US/customFields').CustomFieldsTranslations;
   companies: import('../locales/en-US/companies').CompaniesTranslations;
   crm: import('../locales/en-US/crm').CrmTranslations;
+  catalog: import('../locales/pt-BR/catalog').CatalogTranslations;
+  inventory: import('../locales/pt-BR/inventory').InventoryTranslations;
 }

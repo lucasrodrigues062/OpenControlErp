@@ -22,6 +22,11 @@ import {
   FolderKanban,
   ShieldCheck,
   Settings2,
+  Package,
+  FolderTree,
+  BadgePercent,
+  Boxes,
+  Warehouse,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -44,6 +49,27 @@ interface NavGroup {
 }
 
 const navGroups: NavGroup[] = [
+  {
+    id: 'catalog',
+    titleKey: { pt: 'Catálogo & Preços', en: 'Catalog & Pricing' },
+    icon: Package,
+    items: [
+      { nameKey: 'catalog.productsTitle', defaultName: 'Produtos & Serviços', href: '/catalog/products', icon: Package, permission: 'CATALOG_READ' },
+      { nameKey: 'catalog.categoriesTitle', defaultName: 'Categorias', href: '/catalog/categories', icon: FolderTree, permission: 'CATALOG_READ' },
+      { nameKey: 'catalog.pricesTitle', defaultName: 'Tabelas de Preço', href: '/catalog/price-lists', icon: BadgePercent, permission: 'CATALOG_READ' },
+    ],
+  },
+  {
+    id: 'inventory',
+    titleKey: { pt: 'Estoque & Depósitos', en: 'Inventory & Warehouses' },
+    icon: Boxes,
+    items: [
+      { nameKey: 'inventory.balancesTitle', defaultName: 'Saldos de Estoque', href: '/inventory/balances', icon: Boxes, permission: 'INVENTORY_READ' },
+      { nameKey: 'inventory.warehousesTitle', defaultName: 'Depósitos & Boxes', href: '/inventory/warehouses', icon: Warehouse, permission: 'INVENTORY_READ' },
+      { nameKey: 'inventory.traceabilityTitle', defaultName: 'Lotes (FEFO) & Seriais', href: '/inventory/traceability', icon: ShieldCheck, permission: 'INVENTORY_READ' },
+      { nameKey: 'inventory.kardexTitle', defaultName: 'Extrato Kardex', href: '/inventory/movements', icon: History, permission: 'INVENTORY_READ' },
+    ],
+  },
   {
     id: 'crm',
     titleKey: { pt: 'Comercial & CRM', en: 'Sales & CRM' },

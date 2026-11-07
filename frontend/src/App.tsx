@@ -13,6 +13,13 @@ import { AuditPage } from './pages/AuditPage';
 import { RulesPage } from './pages/RulesPage';
 import { CustomFieldsSettingsPage } from './pages/CustomFieldsSettingsPage';
 import { CompaniesPage } from './pages/CompaniesPage';
+import { ProductsPage } from './pages/catalog/ProductsPage';
+import { CategoriesPage } from './pages/catalog/CategoriesPage';
+import { PriceListsPage } from './pages/catalog/PriceListsPage';
+import { StockBalancesPage } from './pages/inventory/StockBalancesPage';
+import { WarehousesPage } from './pages/inventory/WarehousesPage';
+import { LotsAndSerialsPage } from './pages/inventory/LotsAndSerialsPage';
+import { KardexMovementsPage } from './pages/inventory/KardexMovementsPage';
 import { CustomersPage } from './pages/crm/CustomersPage';
 import { CustomerDetailPage } from './pages/crm/CustomerDetailPage';
 import { LeadsPage } from './pages/crm/LeadsPage';
@@ -24,6 +31,8 @@ const IndexRedirect: React.FC = () => {
   const { hasPermission } = useAuth();
   const { t } = useI18n();
 
+  if (hasPermission('CATALOG_READ')) return <Navigate to="/catalog/products" replace />;
+  if (hasPermission('INVENTORY_READ')) return <Navigate to="/inventory/balances" replace />;
   if (hasPermission('COMPANIES_READ')) return <Navigate to="/companies" replace />;
   if (hasPermission('CRM_READ')) return <Navigate to="/crm/customers" replace />;
   if (hasPermission('USERS_READ')) return <Navigate to="/users" replace />;
@@ -54,6 +63,17 @@ export const App: React.FC = () => {
                 <Route element={<ProtectedRoute />}>
                   <Route element={<AppLayout />}>
                     <Route index element={<IndexRedirect />} />
+                    <Route element={<ProtectedRoute requiredPermission="CATALOG_READ" />}>
+                      <Route path="/catalog/products" element={<ProductsPage />} />
+                      <Route path="/catalog/categories" element={<CategoriesPage />} />
+                      <Route path="/catalog/price-lists" element={<PriceListsPage />} />
+                    </Route>
+                    <Route element={<ProtectedRoute requiredPermission="INVENTORY_READ" />}>
+                      <Route path="/inventory/balances" element={<StockBalancesPage />} />
+                      <Route path="/inventory/warehouses" element={<WarehousesPage />} />
+                      <Route path="/inventory/traceability" element={<LotsAndSerialsPage />} />
+                      <Route path="/inventory/movements" element={<KardexMovementsPage />} />
+                    </Route>
                     <Route element={<ProtectedRoute requiredPermission="COMPANIES_READ" />}>
                       <Route path="/companies" element={<CompaniesPage />} />
                     </Route>
