@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { EconomicGroup } from '../../types/crm';
 import { crmApi } from '../../services/crmApi';
-import { X, Network, Plus } from 'lucide-react';
+import { X, Network, Plus, Sparkles } from 'lucide-react';
+import { generateEconomicGroupCode } from '../../utils/codeGenerator';
 
 interface EconomicGroupModalProps {
   isOpen: boolean;
@@ -37,23 +38,24 @@ export const EconomicGroupModal: React.FC<EconomicGroupModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       fetchGroups();
+      setCode(generateEconomicGroupCode());
       setError(null);
     }
   }, [isOpen]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code.trim() || !name.trim()) return;
+    if (!name.trim()) return;
 
     try {
       setError(null);
       await crmApi.createEconomicGroup({
-        code: code.trim().toUpperCase(),
+        code: (code.trim() || generateEconomicGroupCode()).toUpperCase(),
         name: name.trim(),
         holdingCnpj: holdingCnpj.replace(/\D/g, '') || undefined,
         consolidatedCreditLimit: parseFloat(consolidatedCreditLimit) || 0,
       });
-      setCode('');
+      setCode(generateEconomicGroupCode());
       setName('');
       setHoldingCnpj('');
       setConsolidatedCreditLimit('0');
@@ -96,15 +98,27 @@ export const EconomicGroupModal: React.FC<EconomicGroupModalProps> = ({
             <h3 className="text-sm font-medium text-gray-900 dark:text-white">Novo Grupo Econômico</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Código *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Código *</label>
+                  <button
+                    type="button"
+                    onClick={() => setCode(generateEconomicGroupCode())}
+                    className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 cursor-pointer"
+                    title="Gerar novo código"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Gerar outro
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
-                  placeholder="EX: GRP-SIM"
+                  placeholder="EX: GRP-01"
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 />
+                <span className="text-[10px] text-gray-400 mt-0.5 block">Gerado automaticamente (editável).</span>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Razão Social / Nome *</label>

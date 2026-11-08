@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { crmApi } from '../../services/crmApi';
-import { X, GitBranch } from 'lucide-react';
+import { X, GitBranch, Sparkles } from 'lucide-react';
+import { generatePipelineCode } from '../../utils/codeGenerator';
 
 interface PipelineModalProps {
   isOpen: boolean;
@@ -19,12 +20,22 @@ export const PipelineModal: React.FC<PipelineModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (isOpen) {
+      setCode(generatePipelineCode());
+      setName('');
+      setIsDefault(false);
+      setError(null);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code.trim() || !name.trim()) {
-      setError('Código e nome do funil são obrigatórios.');
+    const finalCode = (code.trim() || generatePipelineCode()).toUpperCase();
+    if (!name.trim()) {
+      setError('Nome do funil é obrigatório.');
       return;
     }
 
@@ -32,7 +43,7 @@ export const PipelineModal: React.FC<PipelineModalProps> = ({
       setLoading(true);
       setError(null);
       const created = await crmApi.createPipeline({
-        code: code.trim().toUpperCase(),
+        code: finalCode,
         name: name.trim(),
         isDefault,
       });
@@ -74,13 +85,22 @@ export const PipelineModal: React.FC<PipelineModalProps> = ({
           )}
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-              Código Único *
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                Código Único * <span className="font-normal text-gray-400">(Auto-gerado, editável)</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setCode(generatePipelineCode())}
+                className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+              >
+                <Sparkles className="h-3 w-3" /> Gerar outro
+              </button>
+            </div>
             <input
               type="text"
               required
-              placeholder="Ex: B2B_SALES, EXPANSION"
+              placeholder="Ex: PIPE-123"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white font-mono"

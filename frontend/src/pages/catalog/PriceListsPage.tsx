@@ -15,7 +15,9 @@ import {
   Calculator,
   X,
   TrendingUp,
+  Sparkles,
 } from 'lucide-react';
+import { generatePriceListCode } from '../../utils/codeGenerator';
 
 export const PriceListsPage: React.FC = () => {
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
@@ -76,12 +78,23 @@ export const PriceListsPage: React.FC = () => {
     fetchProducts();
   }, []);
 
+  const openCreatePriceListModal = () => {
+    setCode(generatePriceListCode());
+    setName('');
+    setMarkupPct('0');
+    setIsDefault(false);
+    setValidFrom('');
+    setValidUntil('');
+    setErrorMsg('');
+    setModalOpen(true);
+  };
+
   const handleCreatePriceList = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     try {
       const payload: CreatePriceListRequest = {
-        code: code.trim().toUpperCase(),
+        code: (code.trim() || generatePriceListCode()).toUpperCase(),
         name: name.trim(),
         currency,
         discountOrMarkupPct: Number(markupPct || '0'),
@@ -155,8 +168,8 @@ export const PriceListsPage: React.FC = () => {
           </p>
         </div>
         <button
-          onClick={() => setModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-sm transition"
+          onClick={openCreatePriceListModal}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-sm transition cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           Nova Tabela de Preços
@@ -332,15 +345,27 @@ export const PriceListsPage: React.FC = () => {
 
             <form onSubmit={handleCreatePriceList} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Código da Tabela *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-gray-700">Código da Tabela *</label>
+                  <button
+                    type="button"
+                    onClick={() => setCode(generatePriceListCode())}
+                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1 cursor-pointer"
+                    title="Gerar novo código"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Gerar outro
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
-                  placeholder="EX: VAREJO, ATACADO, DISTRIB"
+                  placeholder="EX: TAB-01"
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
+                <span className="text-[11px] text-gray-400 mt-0.5 block">Gerado automaticamente. Você pode alterar se desejar.</span>
               </div>
 
               <div>

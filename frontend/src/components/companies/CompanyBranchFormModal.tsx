@@ -15,7 +15,8 @@ import { CertificateTab } from './CertificateTab';
 import { CustomFieldFormSection } from '../customFields/CustomFieldFormSection';
 import { companyBranchesApi } from '../../api/companyBranchesApi';
 import { customFieldsApi } from '../../api/customFieldsApi';
-import { Building2, Upload, X } from 'lucide-react';
+import { Building2, Upload, X, Sparkles } from 'lucide-react';
+import { generateBranchCode } from '../../utils/codeGenerator';
 
 interface CompanyBranchFormModalProps {
   isOpen: boolean;
@@ -109,7 +110,7 @@ export const CompanyBranchFormModal: React.FC<CompanyBranchFormModalProps> = ({
     } else {
       setType(defaultType);
       setParentId(headquartersList[0]?.id || '');
-      setCode('');
+      setCode(generateBranchCode());
       setTradeName('');
       setLegalName('');
       setCnpj('');
@@ -237,7 +238,7 @@ export const CompanyBranchFormModal: React.FC<CompanyBranchFormModalProps> = ({
         const createReq: CreateCompanyBranchRequest = {
           type,
           parentId: type === 'BRANCH' ? parentId : undefined,
-          code: code.trim(),
+          code: (code.trim() || generateBranchCode()),
           tradeName: tradeName.trim(),
           legalName: legalName.trim(),
           cnpj: cnpj.replace(/\D/g, ''),
@@ -428,9 +429,22 @@ export const CompanyBranchFormModal: React.FC<CompanyBranchFormModalProps> = ({
               {/* Code, Trade Name, Legal Name */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    {t('companies.code')} *
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                      {t('companies.code')} *
+                    </label>
+                    {!branchToEdit && (
+                      <button
+                        type="button"
+                        onClick={() => setCode(generateBranchCode())}
+                        className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 cursor-pointer"
+                        title="Gerar novo código"
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        Gerar outro
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     disabled={!!branchToEdit}
@@ -440,7 +454,11 @@ export const CompanyBranchFormModal: React.FC<CompanyBranchFormModalProps> = ({
                     className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-60"
                     required
                   />
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">{t('companies.codeHelp')}</span>
+                  {!branchToEdit ? (
+                    <span className="text-[11px] text-slate-400 mt-0.5 block">Gerado automaticamente. Você pode alterar se desejar.</span>
+                  ) : (
+                    <span className="text-[11px] text-slate-400 mt-0.5 block">{t('companies.codeHelp')}</span>
+                  )}
                 </div>
 
                 <div className="md:col-span-3">

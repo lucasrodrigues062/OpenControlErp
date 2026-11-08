@@ -12,7 +12,9 @@ import {
   XCircle,
   X,
   Layers,
+  Sparkles,
 } from 'lucide-react';
+import { generateCategoryCode } from '../../utils/codeGenerator';
 
 export const CategoriesPage: React.FC = () => {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
@@ -47,7 +49,7 @@ export const CategoriesPage: React.FC = () => {
 
   const openCreateModal = () => {
     setEditingCategory(null);
-    setCode('');
+    setCode(generateCategoryCode());
     setName('');
     setParentId('');
     setColorHex('#10B981');
@@ -81,7 +83,7 @@ export const CategoriesPage: React.FC = () => {
         await catalogApi.updateCategory(editingCategory.id, payload);
       } else {
         const payload: CreateProductCategoryRequest = {
-          code,
+          code: (code.trim() || generateCategoryCode()).toUpperCase(),
           name,
           parentId: parentId ? parentId : null,
           colorHex,
@@ -251,18 +253,34 @@ export const CategoriesPage: React.FC = () => {
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Código da Categoria *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-gray-700">
+                    Código da Categoria *
+                  </label>
+                  {!editingCategory && (
+                    <button
+                      type="button"
+                      onClick={() => setCode(generateCategoryCode())}
+                      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1 cursor-pointer"
+                      title="Gerar novo código"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      Gerar outro
+                    </button>
+                  )}
+                </div>
                 <input
                   type="text"
                   required
                   disabled={!!editingCategory}
-                  placeholder="EX: ELETRONICOS, VESTUARIO"
+                  placeholder="EX: CAT-1234"
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-gray-100"
                 />
+                {!editingCategory && (
+                  <span className="text-[11px] text-gray-400 mt-0.5 block">Gerado automaticamente. Você pode alterar se desejar.</span>
+                )}
               </div>
 
               <div>

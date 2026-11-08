@@ -17,7 +17,9 @@ import {
   AlertCircle,
   Plus,
   Trash2,
+  Sparkles,
 } from 'lucide-react';
+import { generateProductSku } from '../../utils/codeGenerator';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -117,7 +119,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       }
     } else {
       // Defaults
-      setSku('');
+      setSku(generateProductSku());
       setBarcode('');
       setName('');
       setDescription('');
@@ -231,7 +233,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         }
       } else {
         const payload: CreateProductRequest = {
-          sku: sku.trim().toUpperCase(),
+          sku: (sku.trim() || generateProductSku()).toUpperCase(),
           barcode: barcode.trim() || null,
           name: name.trim(),
           description: description.trim() || null,
@@ -360,15 +362,29 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">SKU / Código Interno *</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-gray-700">SKU / Código Interno *</label>
+                    {!productToEdit && (
+                      <button
+                        type="button"
+                        onClick={() => setSku(generateProductSku())}
+                        className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1 cursor-pointer"
+                        title="Gerar novo código"
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        Gerar outro
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     required
-                    placeholder="EX: NOTE-DELL-XPS"
+                    placeholder="EX: PRD-12345"
                     value={sku}
                     onChange={(e) => setSku(e.target.value.toUpperCase())}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
+                  <span className="text-[11px] text-gray-400 mt-0.5 block">Gerado automaticamente. Você pode alterar se preferir.</span>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Código de Barras (EAN-13 / GTIN)</label>

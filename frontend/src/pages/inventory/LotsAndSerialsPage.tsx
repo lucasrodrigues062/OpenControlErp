@@ -23,7 +23,9 @@ import {
   Layers,
   Clock,
   Laptop,
+  Sparkles,
 } from 'lucide-react';
+import { generateLotNumber, generateSerialNumber } from '../../utils/codeGenerator';
 
 export const LotsAndSerialsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'lots' | 'serials'>('lots');
@@ -115,6 +117,27 @@ export const LotsAndSerialsPage: React.FC = () => {
     }
   }, [activeTab, selectedProduct, selectedWarehouse, selectedSerialStatus]);
 
+  const openCreateLotModal = () => {
+    setLotNumber(generateLotNumber());
+    setMfgDate(new Date().toISOString().slice(0, 10));
+    const nextYear = new Date();
+    nextYear.setFullYear(nextYear.getFullYear() + 1);
+    setExpDate(nextYear.toISOString().slice(0, 10));
+    setLotQty('0');
+    setLotError('');
+    setLotModalOpen(true);
+  };
+
+  const openCreateSerialModal = () => {
+    setSerialNumber(generateSerialNumber());
+    const nextYear = new Date();
+    nextYear.setFullYear(nextYear.getFullYear() + 1);
+    setWarrantyUntil(nextYear.toISOString().slice(0, 10));
+    setSerialLotId('');
+    setSerialError('');
+    setSerialModalOpen(true);
+  };
+
   const handleCreateLot = async (e: React.FormEvent) => {
     e.preventDefault();
     setLotError('');
@@ -122,7 +145,7 @@ export const LotsAndSerialsPage: React.FC = () => {
       const payload: CreateLotRequest = {
         productId: selectedProduct,
         warehouseId: selectedWarehouse,
-        lotNumber: lotNumber.trim().toUpperCase(),
+        lotNumber: (lotNumber.trim() || generateLotNumber()).toUpperCase(),
         manufacturingDate: mfgDate,
         expirationDate: expDate,
         quantityOnHand: Number(lotQty || '0'),
@@ -146,7 +169,7 @@ export const LotsAndSerialsPage: React.FC = () => {
       const payload: CreateSerialNumberRequest = {
         productId: selectedProduct,
         warehouseId: selectedWarehouse,
-        serialNumber: serialNumber.trim().toUpperCase(),
+        serialNumber: (serialNumber.trim() || generateSerialNumber()).toUpperCase(),
         lotId: serialLotId || null,
         warrantyUntil: warrantyUntil || null,
       };
@@ -224,16 +247,16 @@ export const LotsAndSerialsPage: React.FC = () => {
         <div className="flex items-center gap-2">
           {activeTab === 'lots' ? (
             <button
-              onClick={() => setLotModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition"
+              onClick={openCreateLotModal}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               Novo Lote
             </button>
           ) : (
             <button
-              onClick={() => setSerialModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition"
+              onClick={openCreateSerialModal}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               Registrar Nº de Série
@@ -460,15 +483,27 @@ export const LotsAndSerialsPage: React.FC = () => {
 
             <form onSubmit={handleCreateLot} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Identificador do Lote *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-gray-700">Identificador do Lote *</label>
+                  <button
+                    type="button"
+                    onClick={() => setLotNumber(generateLotNumber())}
+                    className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 cursor-pointer"
+                    title="Gerar novo lote"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Gerar outro
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
-                  placeholder="EX: LOTE-2026-001"
+                  placeholder="EX: LOTE-20261108-101"
                   value={lotNumber}
                   onChange={(e) => setLotNumber(e.target.value.toUpperCase())}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
+                <span className="text-[11px] text-gray-400 mt-0.5 block">Gerado automaticamente. Você pode alterar se desejar.</span>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -545,15 +580,27 @@ export const LotsAndSerialsPage: React.FC = () => {
 
             <form onSubmit={handleCreateSerial} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Número de Série Único *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-gray-700">Número de Série Único *</label>
+                  <button
+                    type="button"
+                    onClick={() => setSerialNumber(generateSerialNumber())}
+                    className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 cursor-pointer"
+                    title="Gerar novo número de série"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Gerar outro
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
-                  placeholder="EX: SN-DELL-9948210"
+                  placeholder="EX: SN-2026-104821"
                   value={serialNumber}
                   onChange={(e) => setSerialNumber(e.target.value.toUpperCase())}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
+                <span className="text-[11px] text-gray-400 mt-0.5 block">Gerado automaticamente. Você pode alterar se desejar.</span>
               </div>
 
               <div>

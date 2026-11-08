@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { CustomerCategory } from '../../types/crm';
 import { crmApi } from '../../services/crmApi';
-import { X, Tag, Plus } from 'lucide-react';
+import { X, Tag, Plus, Sparkles } from 'lucide-react';
+import { generateCustomerCategoryCode } from '../../utils/codeGenerator';
 
 interface CustomerCategoryModalProps {
   isOpen: boolean;
@@ -38,24 +39,25 @@ export const CustomerCategoryModal: React.FC<CustomerCategoryModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       fetchCategories();
+      setCode(generateCustomerCategoryCode());
       setError(null);
     }
   }, [isOpen]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code.trim() || !name.trim()) return;
+    if (!name.trim()) return;
 
     try {
       setError(null);
       await crmApi.createCustomerCategory({
-        code: code.trim().toUpperCase(),
+        code: (code.trim() || generateCustomerCategoryCode()).toUpperCase(),
         name: name.trim(),
         description: description.trim() || undefined,
         colorHex,
         defaultDiscountPct: parseFloat(defaultDiscountPct) || 0,
       });
-      setCode('');
+      setCode(generateCustomerCategoryCode());
       setName('');
       setDescription('');
       setDefaultDiscountPct('0');
@@ -98,15 +100,27 @@ export const CustomerCategoryModal: React.FC<CustomerCategoryModalProps> = ({
             <h3 className="text-sm font-medium text-gray-900 dark:text-white">Nova Categoria</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Código *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Código *</label>
+                  <button
+                    type="button"
+                    onClick={() => setCode(generateCustomerCategoryCode())}
+                    className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 cursor-pointer"
+                    title="Gerar novo código"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Gerar outro
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
-                  placeholder="EX: ATACADO"
+                  placeholder="EX: CAT-123"
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 />
+                <span className="text-[10px] text-gray-400 mt-0.5 block">Gerado automaticamente (editável).</span>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Nome *</label>
