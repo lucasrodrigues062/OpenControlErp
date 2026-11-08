@@ -9,14 +9,28 @@ This guide describes end-to-end verification scenarios to test the full lifecycl
 
 ## Scenario 1: Configure Custom Excel-Like Landed Cost Formula Profile
 
-1. **Create Cost Formula Profile**:
-   - Send `POST /api/v1/inbound/cost-formula-profiles` with payload:
+1. **Create Cost Formula Profile with User Custom Variables**:
+   - Send `POST /api/v1/inbound/cost-formula-profiles` with payload declaring custom variables (`TAXA_DESCARGA` and `FATOR_QUEBRA_PCT`):
      ```json
      {
        "code": "LUCRO_REAL_IND",
-       "name": "Indústria - Lucro Real com Crédito Total e Frete Rateado",
-       "formulaExpression": "= INVOICE_UNIT_PRICE + ((FREIGHT_ALLOCATED + INSURANCE_ALLOCATED + OTHER_EXPENSES) / QUANTITY) + IPI_COST - (ICMS_CREDIT + PIS_CREDIT + COFINS_CREDIT)",
+       "name": "Indústria - Lucro Real com Variáveis Customizadas e Crédito",
+       "formulaExpression": "= (INVOICE_UNIT_PRICE * (1 + FATOR_QUEBRA_PCT)) + ((FREIGHT_ALLOCATED + INSURANCE_ALLOCATED + TAXA_DESCARGA) / QUANTITY) + IPI_COST - (ICMS_CREDIT + PIS_CREDIT + COFINS_CREDIT)",
        "freightProrationMethod": "VALUE_PROPORTIONAL",
+       "customVariables": {
+         "TAXA_DESCARGA": {
+           "name": "TAXA_DESCARGA",
+           "label": "Taxa de Descarga e Paletização",
+           "defaultValue": 20.00,
+           "scope": "PROFILE_DEFAULT"
+         },
+         "FATOR_QUEBRA_PCT": {
+           "name": "FATOR_QUEBRA_PCT",
+           "label": "Margem de Quebra/Perda de Transporte (%)",
+           "defaultValue": 0.02,
+           "scope": "PROFILE_DEFAULT"
+         }
+       },
        "isDefault": true
      }
      ```

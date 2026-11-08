@@ -48,6 +48,7 @@ erDiagram
         string name
         text formula_expression
         string freight_proration_method
+        jsonb custom_variables
         boolean is_default
         boolean is_active
     }
@@ -58,6 +59,7 @@ erDiagram
         uuid branch_id
         uuid supplier_id
         uuid cost_formula_profile_id FK
+        jsonb custom_variable_values
         string access_key
         string invoice_number
         string series
@@ -180,6 +182,7 @@ CREATE TABLE cost_formula_profiles (
     name VARCHAR(150) NOT NULL,
     formula_expression TEXT NOT NULL,
     freight_proration_method VARCHAR(30) NOT NULL DEFAULT 'VALUE_PROPORTIONAL', -- 'VALUE_PROPORTIONAL', 'WEIGHT_PROPORTIONAL'
+    custom_variables JSONB NOT NULL DEFAULT '{}'::jsonb, -- Map of user-defined custom variables { "NAME": { "label": "...", "defaultValue": 0.00, "scope": "..." } }
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

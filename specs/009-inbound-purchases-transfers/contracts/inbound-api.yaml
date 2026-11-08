@@ -194,12 +194,38 @@ components:
           type: string
         formulaExpression:
           type: string
-          example: "= INVOICE_UNIT_PRICE + (FREIGHT_ALLOCATED + INSURANCE_ALLOCATED) / QUANTITY - (ICMS_CREDIT + PIS_CREDIT + COFINS_CREDIT)"
+          example: "= (INVOICE_UNIT_PRICE * (1 + FATOR_QUEBRA_PCT)) + (FREIGHT_ALLOCATED + TAXA_DESCARGA) / QUANTITY"
         freightProrationMethod:
           type: string
           enum: [VALUE_PROPORTIONAL, WEIGHT_PROPORTIONAL]
+        customVariables:
+          type: object
+          description: Map of user-defined custom variables accessible in formulas
+          additionalProperties:
+            $ref: '#/components/schemas/CustomVariableDefinition'
         isDefault:
           type: boolean
+
+    CustomVariableDefinition:
+      type: object
+      required:
+        - name
+        - label
+        - defaultValue
+      properties:
+        name:
+          type: string
+          example: "TAXA_DESCARGA"
+        label:
+          type: string
+          example: "Taxa Fixa de Descarga por Lote"
+        defaultValue:
+          type: number
+          example: 15.00
+        scope:
+          type: string
+          enum: [PROFILE_DEFAULT, PER_INVOICE_PROMPT]
+          default: PROFILE_DEFAULT
 
     EvaluateFormulaTestRequest:
       type: object

@@ -120,6 +120,7 @@ Logistics operators need to transfer stock between warehouses within the same br
 - **FR-009**: System MUST capture unique individual serial numbers during inbound receipt for products marked with serial tracking mode (`SERIAL_NUMBER`), preventing duplicate serial active states.
 - **FR-010**: System MUST calculate Landed Cost per item by prorating purchase price, inbound freight, insurance, accessory expenses, and other cost types.
 - **FR-011**: System MUST support multiple Landed Cost types (e.g., Inbound Freight CIF/FOB, Transit Insurance, Unloading/Handling, Customs Duty, Special Packaging).
+- **FR-011b**: System MUST allow users to define Custom Variables within Cost Formula Profiles (e.g., custom rate coefficients, fixed handling fees, port surcharges, shrinkage percentages), which can be directly referenced in formula expressions and overridden per invoice if desired.
 - **FR-012**: System MUST adjust item acquisition cost based on the branch's fiscal tax regime (deducting recoverable ICMS, PIS, COFINS for Lucro Real/Presumido, or fully absorbing taxes for Simples Nacional).
 - **FR-013**: System MUST automatically update the item's statutory Weighted Average Cost (Custo Médio Ponderado - CMP) and Last Acquisition Cost (`last_acquisition_cost`) upon receiving completion.
 - **FR-014**: System MUST write immutable double-entry ledger transactions (`stock_movements`) for all inbound receipts, detailing movement type, branch, warehouse, product, quantity, and unit acquisition cost.

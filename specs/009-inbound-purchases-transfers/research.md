@@ -42,6 +42,17 @@ Implement a **Configurable Landed Cost Formula Engine (`CostFormulaEngine`)** su
   | `PIS_CREDIT` | Statutory recoverable PIS tax credit per unit |
   | `COFINS_CREDIT` | Statutory recoverable COFINS tax credit per unit |
   | `EXTRA_DISCOUNT` | Negotiated commercial deduction or rebate |
+  | `[USER_CUSTOM_VARIABLE]` | Any user-defined variable declared in the profile (e.g. `TAXA_DESCARGA`, `MARGEM_PERDA`, `TAXA_DOLAR_EXTRA`) |
+
+- **User-Defined Custom Variables (Variáveis Personalizadas pelo Usuário)**:
+  - Users can declare custom named variables in their Cost Formula Profiles.
+  - Each custom variable specifies:
+    * `name`: Uppercase identifier (e.g., `TAXA_DESCARGA`, `FATOR_QUEBRA_PCT`, `TAXA_ARMAZENAGEM`).
+    * `label`: Friendly display label (e.g., 'Taxa de Descarga por Lote', 'Margem de Quebra (%)').
+    * `defaultValue`: Numeric default value (e.g., `15.00` or `0.02`).
+    * `scope`: `PROFILE_DEFAULT` (fixed value across all invoices) or `PER_INVOICE_PROMPT` (can be informed when receiving an invoice).
+  - The evaluator merges native variables + user custom variables into the evaluation scope seamlessly. Users can combine them in the formula:
+    `= (INVOICE_UNIT_PRICE * (1 + FATOR_QUEBRA_PCT)) + (FREIGHT_ALLOCATED + TAXA_DESCARGA) / QUANTITY`
 - **Evaluation Technology**:
   A secure Kotlin-native expression evaluator built on Spring Expression Language (SpEL) with a sandboxed context (no Java reflection, no class instantiation, strictly mathematical/logical functions) or tokenized AST.
 - **Alternatives Considered**:
