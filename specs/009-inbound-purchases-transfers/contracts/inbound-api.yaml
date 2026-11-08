@@ -1,0 +1,326 @@
+openapi: 3.0.3
+info:
+  title: OpenControl ERP - Inbound Procurement, Invoicing & Inventory Transfers API
+  version: 1.0.0
+  description: RESTful contracts for purchase orders, NF-e XML ingestion, landed cost formula evaluation, physical conference, and stock transfers.
+
+paths:
+  /api/v1/inbound/cost-formula-profiles:
+    get:
+      summary: List cost formula profiles
+      operationId: listCostFormulaProfiles
+      responses:
+        '200':
+          description: List of formula profiles
+    post:
+      summary: Create cost formula profile
+      operationId: createCostFormulaProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCostFormulaProfileRequest'
+      responses:
+        '201':
+          description: Created profile
+
+  /api/v1/inbound/cost-formula-profiles/evaluate-test:
+    post:
+      summary: Test evaluation of an Excel-like formula with simulated variables
+      operationId: evaluateCostFormulaTest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluateFormulaTestRequest'
+      responses:
+        '200':
+          description: Calculation result and step-by-step breakdown
+
+  /api/v1/inbound/purchase-orders:
+    get:
+      summary: Search and list purchase orders
+      operationId: listPurchaseOrders
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: supplierId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Purchase order items
+    post:
+      summary: Create a new purchase order
+      operationId: createPurchaseOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePurchaseOrderRequest'
+      responses:
+        '201':
+          description: Created purchase order
+
+  /api/v1/inbound/purchase-orders/{id}/approve:
+    post:
+      summary: Approve purchase order
+      operationId: approvePurchaseOrder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Purchase order approved
+
+  /api/v1/inbound/invoices/upload-xml:
+    post:
+      summary: Upload and parse SEFAZ NF-e XML file
+      operationId: uploadNFeXml
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                targetBranchId:
+                  type: string
+                  format: uuid
+                costFormulaProfileId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Parsed invoice with matched items and calculated landed costs
+
+  /api/v1/inbound/invoices/{id}/finalize-stock:
+    post:
+      summary: Finalize invoice and commit inventory movements + CMP recalculation
+      operationId: finalizeInvoiceStock
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinalizeInvoiceStockRequest'
+      responses:
+        '200':
+          description: Stock updated and ledger posted
+
+  /api/v1/inbound/transfers:
+    get:
+      summary: List internal and inter-branch transfers
+      operationId: listTransfers
+      responses:
+        '200':
+          description: List of transfers
+    post:
+      summary: Create internal warehouse or inter-branch transfer
+      operationId: createTransfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransferRequest'
+      responses:
+        '201':
+          description: Transfer created
+
+  /api/v1/inbound/transfers/{id}/dispatch:
+    post:
+      summary: Dispatch inter-branch transfer into In-Transit state
+      operationId: dispatchTransfer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transfer dispatched
+
+  /api/v1/inbound/transfers/{id}/receive:
+    post:
+      summary: Receive inter-branch transfer at destination branch
+      operationId: receiveTransfer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transfer received and inventory credited
+
+components:
+  schemas:
+    CreateCostFormulaProfileRequest:
+      type: object
+      required:
+        - code
+        - name
+        - formulaExpression
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        formulaExpression:
+          type: string
+          example: "= INVOICE_UNIT_PRICE + (FREIGHT_ALLOCATED + INSURANCE_ALLOCATED) / QUANTITY - (ICMS_CREDIT + PIS_CREDIT + COFINS_CREDIT)"
+        freightProrationMethod:
+          type: string
+          enum: [VALUE_PROPORTIONAL, WEIGHT_PROPORTIONAL]
+        isDefault:
+          type: boolean
+
+    EvaluateFormulaTestRequest:
+      type: object
+      required:
+        - formulaExpression
+        - variables
+      properties:
+        formulaExpression:
+          type: string
+        variables:
+          type: object
+          additionalProperties:
+            type: number
+
+    CreatePurchaseOrderRequest:
+      type: object
+      required:
+        - branchId
+        - supplierId
+        - orderDate
+        - items
+      properties:
+        orderNumber:
+          type: string
+        branchId:
+          type: string
+          format: uuid
+        supplierId:
+          type: string
+          format: uuid
+        orderDate:
+          type: string
+          format: date
+        expectedDeliveryDate:
+          type: string
+          format: date
+        paymentTerms:
+          type: string
+        notes:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseOrderItemRequest'
+
+    PurchaseOrderItemRequest:
+      type: object
+      required:
+        - productId
+        - quantityOrdered
+        - unitPrice
+        - targetWarehouseId
+      properties:
+        productId:
+          type: string
+          format: uuid
+        quantityOrdered:
+          type: number
+        unitPrice:
+          type: number
+        targetWarehouseId:
+          type: string
+          format: uuid
+
+    FinalizeInvoiceStockRequest:
+      type: object
+      required:
+        - warehouseId
+      properties:
+        warehouseId:
+          type: string
+          format: uuid
+        conferenceNotes:
+          type: string
+
+    CreateTransferRequest:
+      type: object
+      required:
+        - transferType
+        - originBranchId
+        - originWarehouseId
+        - destinationBranchId
+        - destinationWarehouseId
+        - items
+      properties:
+        transferNumber:
+          type: string
+        transferType:
+          type: string
+          enum: [INTERNAL_WAREHOUSE, INTER_BRANCH]
+        originBranchId:
+          type: string
+          format: uuid
+        originWarehouseId:
+          type: string
+          format: uuid
+        destinationBranchId:
+          type: string
+          format: uuid
+        destinationWarehouseId:
+          type: string
+          format: uuid
+        trackingNotes:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+            properties:
+              productId:
+                type: string
+                format: uuid
+              quantity:
+                type: number
+              lotId:
+                type: string
+                format: uuid
+              serialNumbers:
+                type: array
+                items:
+                  type: string
