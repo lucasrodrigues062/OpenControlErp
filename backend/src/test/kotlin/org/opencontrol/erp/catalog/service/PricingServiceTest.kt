@@ -98,6 +98,24 @@ class PricingServiceTest {
     }
 
     @Test
+    fun `should return prices by price list`() {
+        val priceListId = UUID.randomUUID()
+        val productPrice =
+            ProductPrice(
+                id = UUID.randomUUID(),
+                tenantId = tenantId,
+                priceListId = priceListId,
+                productId = productId,
+                salesPrice = BigDecimal("199.90"),
+            )
+        every { productPriceRepository.findAllByTenantIdAndPriceListId(tenantId, priceListId) } returns listOf(productPrice)
+
+        val list = service.getPricesByPriceList(priceListId)
+        assertEquals(1, list.size)
+        assertEquals(BigDecimal("199.90"), list[0].salesPrice)
+    }
+
+    @Test
     fun `should resolve promotional price when promo is active`() {
         val priceListId = UUID.randomUUID()
         val priceList =

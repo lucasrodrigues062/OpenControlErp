@@ -123,4 +123,9 @@ export const catalogApi = {
     const res = await api.get<ProductPrice[]>(`/products/${productId}/prices`);
     return res.data;
   },
+
+  async getPriceListPrices(priceListId: string): Promise<ProductPrice[]> {
+    const res = await api.get<ProductPrice[]>(`/price-lists/${priceListId}/prices`);
+    return res.data;
+  },
 };

@@ -184,6 +184,8 @@ export interface ProductPrice {
   promotionalPrice?: number | null;
   promoStart?: string | null;
   promoEnd?: string | null;
+  effectivePrice?: number;
+  isPromotionalActive?: boolean;
   updatedAt: string;
 }
 

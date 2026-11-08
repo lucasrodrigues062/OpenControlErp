@@ -125,6 +125,15 @@ class PricingService(
     }
 
     @Transactional(readOnly = true)
+    fun getPricesByPriceList(priceListId: UUID): List<ProductPriceResponse> {
+        val tenantId = getCurrentTenantId()
+        val today = LocalDate.now()
+        return productPriceRepository
+            .findAllByTenantIdAndPriceListId(tenantId, priceListId)
+            .map { ProductPriceResponse.fromEntity(it, today) }
+    }
+
+    @Transactional(readOnly = true)
     fun resolveEffectivePrice(
         productId: UUID,
         targetPriceListId: UUID? = null,

@@ -4,6 +4,7 @@ import {
   CreatePriceListRequest,
   SetProductPriceRequest,
   Product,
+  ProductPrice,
 } from '../../types/catalog';
 import { catalogApi } from '../../services/catalogApi';
 import {
@@ -24,6 +25,9 @@ export const PriceListsPage: React.FC = () => {
   const [selectedList, setSelectedList] = useState<PriceList | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pricesMap, setPricesMap] = useState<Record<string, ProductPrice>>({});
+  const [loadingPrices, setLoadingPrices] = useState(false);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
 
   // Price List creation modal
   const [modalOpen, setModalOpen] = useState(false);
@@ -73,10 +77,34 @@ export const PriceListsPage: React.FC = () => {
     }
   };
 
+  const fetchPricesForList = async (listId: string) => {
+    setLoadingPrices(true);
+    try {
+      const listPrices = await catalogApi.getPriceListPrices(listId);
+      const map: Record<string, ProductPrice> = {};
+      listPrices.forEach((lp) => {
+        map[lp.productId] = lp;
+      });
+      setPricesMap(map);
+    } catch (err) {
+      console.error('Error fetching prices for list:', err);
+    } finally {
+      setLoadingPrices(false);
+    }
+  };
+
   useEffect(() => {
     fetchPriceLists();
     fetchProducts();
   }, []);
+
+  useEffect(() => {
+    if (selectedList) {
+      fetchPricesForList(selectedList.id);
+    } else {
+      setPricesMap({});
+    }
+  }, [selectedList]);
 
   const openCreatePriceListModal = () => {
     setCode(generatePriceListCode());
@@ -119,12 +147,21 @@ export const PriceListsPage: React.FC = () => {
 
   const openSetPriceModal = (p: Product) => {
     setSelectedProduct(p);
-    // Pre-fill with markup suggestion if not set
-    const suggested = (Number(p.averageCost || 0) * (1 + Number(selectedList?.discountOrMarkupPct || 0) / 100)).toFixed(2);
-    setSalesPrice(suggested);
-    setPromotionalPrice('');
-    setPromoStart('');
-    setPromoEnd('');
+    const existing = pricesMap[p.id];
+    if (existing) {
+      setSalesPrice(existing.salesPrice?.toString() || '');
+      setPromotionalPrice(existing.promotionalPrice?.toString() || '');
+      setPromoStart(existing.promoStart || '');
+      setPromoEnd(existing.promoEnd || '');
+    } else {
+      // Pre-fill with markup suggestion if not set
+      const cost = Number(p.averageCost || p.lastAcquisitionCost || 0);
+      const suggested = (cost * (1 + Number(selectedList?.discountOrMarkupPct || 0) / 100)).toFixed(2);
+      setSalesPrice(Number(suggested) > 0 ? suggested : '');
+      setPromotionalPrice('');
+      setPromoStart('');
+      setPromoEnd('');
+    }
     setPriceError('');
     setPriceModalOpen(true);
   };
@@ -140,9 +177,14 @@ export const PriceListsPage: React.FC = () => {
         promoStart: promoStart || null,
         promoEnd: promoEnd || null,
       };
-      await catalogApi.setProductPrice(selectedList.id, selectedProduct.id, payload);
+      const saved = await catalogApi.setProductPrice(selectedList.id, selectedProduct.id, payload);
+      setPricesMap((prev) => ({
+        ...prev,
+        [selectedProduct.id]: saved,
+      }));
       setPriceModalOpen(false);
-      alert('Preço configurado com sucesso!');
+      setSuccessToast(`Preço do produto "${selectedProduct.name}" atualizado com sucesso!`);
+      setTimeout(() => setSuccessToast(null), 4000);
     } catch (err: any) {
       setPriceError(err.response?.data?.detail || err.message || 'Erro ao salvar preço do produto');
     }
@@ -156,6 +198,14 @@ export const PriceListsPage: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Toast Alert */}
+      {successToast && (
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-2 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-lg animate-fade-in text-sm font-medium">
+          <Sparkles className="h-4 w-4" />
+          <span>{successToast}</span>
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -295,28 +345,71 @@ export const PriceListsPage: React.FC = () => {
               </div>
             ) : (
               <div className="mt-4 divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
-                {products.map((p) => {
+                {loadingPrices ? (
+                  <div className="p-8 text-center text-xs text-gray-400">Atualizando preços da tabela...</div>
+                ) : products.map((p) => {
+                  const currentPrice = pricesMap[p.id];
+                  const cost = Number(p.averageCost || p.lastAcquisitionCost || 0);
                   const suggested = (
-                    Number(p.averageCost || 0) * (1 + Number(selectedList?.discountOrMarkupPct || 0) / 100)
+                    cost * (1 + Number(selectedList?.discountOrMarkupPct || 0) / 100)
                   ).toFixed(2);
 
                   return (
                     <div key={p.id} className="py-3 flex items-center justify-between hover:bg-gray-50/60 px-2 rounded-lg transition">
                       <div>
-                        <span className="font-semibold text-gray-900 text-sm">{p.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900 text-sm">{p.name}</span>
+                          {currentPrice ? (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                              Preço Ativo
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                              Não precificado
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5 font-mono">
                           <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[11px] font-bold text-gray-700">{p.sku}</span>
-                          <span>Custo CMP: R$ {Number(p.averageCost || p.lastAcquisitionCost).toFixed(2)}</span>
+                          <span>Custo CMP: R$ {cost.toFixed(2)}</span>
                           <span className="text-emerald-700 font-semibold">Sugerido: R$ {suggested}</span>
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => openSetPriceModal(p)}
-                        className="px-3 py-1.5 border border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded-lg text-xs font-semibold transition"
-                      >
-                        Configurar Preço
-                      </button>
+                      <div className="flex items-center gap-4">
+                        {currentPrice ? (
+                          <div className="text-right">
+                            <div className="text-sm font-bold text-emerald-700 font-mono">
+                              {selectedList?.currency || 'R$'} {Number(currentPrice.effectivePrice ?? currentPrice.salesPrice).toFixed(2)}
+                            </div>
+                            {currentPrice.isPromotionalActive ? (
+                              <div className="text-[10px] text-amber-600 font-semibold flex items-center justify-end gap-1">
+                                <span className="line-through text-gray-400">
+                                  R$ {Number(currentPrice.salesPrice).toFixed(2)}
+                                </span>
+                                <span>Promoção</span>
+                              </div>
+                            ) : (
+                              <div className="text-[10px] text-gray-400">Preço Regular</div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-right">
+                            <div className="text-xs text-gray-400 font-mono italic">Sem preço fixo</div>
+                          </div>
+                        )}
+
+                        <button
+                          onClick={() => openSetPriceModal(p)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                            currentPrice
+                              ? 'border border-gray-300 text-gray-700 hover:bg-gray-100'
+                              : 'border border-emerald-600 text-emerald-700 hover:bg-emerald-50'
+                          }`}
+                        >
+                          {currentPrice ? 'Alterar Preço' : 'Configurar Preço'}
+                        </button>
+                      </div>
                     </div>
                   );
                 })}

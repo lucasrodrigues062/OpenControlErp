@@ -49,6 +49,13 @@ class PriceListController(
         @Valid @RequestBody request: SetProductPriceRequest,
     ): ResponseEntity<ProductPriceResponse> = ResponseEntity.ok(service.setProductPrice(priceListId, productId, request))
 
+    @GetMapping("/price-lists/{priceListId}/prices")
+    @PreAuthorize("hasAuthority('CATALOG_READ') or hasAuthority('CATALOG_WRITE')")
+    @Operation(summary = "Get all prices configured in a price list")
+    fun getPricesByPriceList(
+        @PathVariable priceListId: UUID,
+    ): ResponseEntity<List<ProductPriceResponse>> = ResponseEntity.ok(service.getPricesByPriceList(priceListId))
+
     @GetMapping("/products/{productId}/prices")
     @PreAuthorize("hasAuthority('CATALOG_READ') or hasAuthority('CATALOG_WRITE')")
     @Operation(summary = "Get all prices configured for a product across price lists")

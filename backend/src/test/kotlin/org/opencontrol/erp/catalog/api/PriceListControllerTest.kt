@@ -104,6 +104,16 @@ class PriceListControllerTest {
     }
 
     @Test
+    fun `should get prices by price list`() {
+        every { pricingService.getPricesByPriceList(priceListId) } returns listOf(sampleProductPrice)
+
+        val res = controller.getPricesByPriceList(priceListId)
+        assertEquals(HttpStatus.OK, res.statusCode)
+        assertEquals(1, res.body!!.size)
+        assertEquals(sampleProductPrice.id, res.body!![0].id)
+    }
+
+    @Test
     fun `should get product prices across lists`() {
         every { pricingService.getProductPrices(productId) } returns listOf(sampleProductPrice)
 
