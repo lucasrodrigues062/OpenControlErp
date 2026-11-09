@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   Layers,
   PackageCheck,
+  Sparkles,
   X,
 } from 'lucide-react';
 
@@ -30,6 +31,7 @@ export const InboundInvoicesPage: React.FC = () => {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
+  const [autoRegistering, setAutoRegistering] = useState(false);
 
   useEffect(() => {
     const branch = localStorage.getItem('opencontrol_current_branch_id') || '00000000-0000-0000-0000-000000000000';
@@ -97,6 +99,31 @@ export const InboundInvoicesPage: React.FC = () => {
       alert('Nota fiscal estocada com sucesso! Saldos e Custo Médio Ponderado (CMP) atualizados.');
     } catch (err: any) {
       alert(err.response?.data?.detail || 'Erro ao estocar nota fiscal');
+    }
+  };
+
+  const handleAutoRegisterMissing = async () => {
+    if (!selectedInvoice) return;
+    const unmappedCount = selectedInvoice.items.filter((it) => !it.matchedProductId).length;
+    if (unmappedCount === 0) return;
+
+    const confirmed = window.confirm(
+      `Deseja cadastrar automaticamente os ${unmappedCount} produto(s) no catálogo com os dados e preços desta nota fiscal?`
+    );
+    if (!confirmed) return;
+
+    setAutoRegistering(true);
+    try {
+      const updated = await inboundApi.autoRegisterMissingProducts(selectedInvoice.id);
+      setSelectedInvoice(updated);
+      setInvoices((prev) => prev.map((inv) => (inv.id === updated.id ? updated : inv)));
+      // Refresh catalog products list
+      catalogApi.searchProducts({ size: 100 }).then((res) => setProducts(res.items || []));
+      alert(`${unmappedCount} produto(s) cadastrado(s) e vinculado(s) com sucesso no catálogo!`);
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Erro ao cadastrar produtos automaticamente');
+    } finally {
+      setAutoRegistering(false);
     }
   };
 
@@ -250,6 +277,33 @@ export const InboundInvoicesPage: React.FC = () => {
                   </span>
                 </div>
               </div>
+
+              {/* Unmapped Items Prompt Banner */}
+              {selectedInvoice.status !== 'STOCKED' && !isAllItemsMatched(selectedInvoice) && (
+                <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-amber-100 text-amber-700 shrink-0 mt-0.5">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs sm:text-sm text-amber-950">
+                        {selectedInvoice.items.filter((it) => !it.matchedProductId).length} produto(s) não encontrado(s) no catálogo
+                      </div>
+                      <div className="text-xs text-amber-800 mt-0.5">
+                        Deseja cadastrá-los automaticamente agora com SKU, NCM, unidade de medida e preço de custo da nota?
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleAutoRegisterMissing}
+                    disabled={autoRegistering}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg shadow-xs transition shrink-0 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {autoRegistering ? 'Cadastrando produtos...' : 'Cadastrar Automaticamente'}
+                  </button>
+                </div>
+              )}
 
               {/* Items List */}
               <div>

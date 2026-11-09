@@ -27,6 +27,11 @@ interface ProductRepository :
         sku: String,
     ): Optional<Product>
 
+    fun findByTenantIdAndNameIgnoreCase(
+        tenantId: UUID,
+        name: String,
+    ): Optional<Product>
+
     fun existsByTenantIdAndSku(
         tenantId: UUID,
         sku: String,

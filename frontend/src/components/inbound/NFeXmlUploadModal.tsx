@@ -16,6 +16,7 @@ export const NFeXmlUploadModal: React.FC<NFeXmlUploadModalProps> = ({
   branchId,
 }) => {
   const [file, setFile] = useState<File | null>(null);
+  const [autoRegister, setAutoRegister] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -48,7 +49,7 @@ export const NFeXmlUploadModal: React.FC<NFeXmlUploadModalProps> = ({
       formData.append('file', file);
       formData.append('targetBranchId', branchId);
 
-      await inboundApi.uploadNFeXml(formData);
+      await inboundApi.uploadNFeXml(formData, autoRegister);
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -111,6 +112,22 @@ export const NFeXmlUploadModal: React.FC<NFeXmlUploadModalProps> = ({
             </label>
           </div>
 
+          <div className="flex items-start gap-3 p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/40 dark:border-emerald-800 dark:bg-emerald-950/20">
+            <input
+              type="checkbox"
+              id="autoRegisterCheckbox"
+              checked={autoRegister}
+              onChange={(e) => setAutoRegister(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+            />
+            <label htmlFor="autoRegisterCheckbox" className="text-xs text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+              <span className="font-semibold block text-gray-900 dark:text-white">
+                Cadastrar automaticamente produtos não encontrados no catálogo
+              </span>
+              O sistema busca produtos por Código de Barras (EAN), SKU ou Descrição exata. Itens inéditos serão cadastrados no catálogo com NCM, unidade de medida e preço de custo da nota.
+            </label>
+          </div>
+
           <div className="rounded-xl bg-emerald-50/60 p-3.5 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/40 text-xs text-emerald-900 dark:text-emerald-300 space-y-1">
             <div className="font-bold flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" /> O que o sistema faz automaticamente:
@@ -118,7 +135,7 @@ export const NFeXmlUploadModal: React.FC<NFeXmlUploadModalProps> = ({
             <ul className="list-disc list-inside pl-1 text-[11px] text-gray-600 dark:text-gray-400 space-y-0.5">
               <li>Reconhece o fornecedor pelo CNPJ/CPF da nota</li>
               <li>Faz de-para inteligente de itens já conhecidos</li>
-              <li>Aplica fator de conversão de unidades (ex: caixas $\rightarrow$ unidades)</li>
+              <li>Aplica fator de conversão de unidades (ex: caixas → unidades)</li>
               <li>Calcula frete, impostos e custos landed em tempo real</li>
             </ul>
           </div>

@@ -49,8 +49,17 @@ class InboundInvoiceController(
         @RequestPart("file") file: MultipartFile,
         @RequestParam("targetBranchId") targetBranchId: UUID,
         @RequestParam(value = "costFormulaProfileId", required = false) costFormulaProfileId: UUID?,
+        @RequestParam(value = "autoRegisterMissingProducts", required = false, defaultValue = "false") autoRegisterMissingProducts: Boolean = false,
     ): ResponseEntity<InboundInvoiceResponse> =
-        ResponseEntity.ok(service.uploadXml(file, targetBranchId, costFormulaProfileId))
+        ResponseEntity.ok(service.uploadXml(file, targetBranchId, costFormulaProfileId, autoRegisterMissingProducts))
+
+    @PostMapping("/{id}/auto-register-missing-products")
+    @PreAuthorize("hasAuthority('INBOUND_WRITE')")
+    @Operation(summary = "Automatically register and map missing products in catalog from invoice items")
+    fun autoRegisterMissingProducts(
+        @PathVariable id: UUID,
+    ): ResponseEntity<InboundInvoiceResponse> =
+        ResponseEntity.ok(service.autoRegisterMissingProducts(id))
 
     @PutMapping("/{id}/items/{itemId}/match")
     @PreAuthorize("hasAuthority('INBOUND_WRITE')")

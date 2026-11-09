@@ -1,6 +1,9 @@
 package org.opencontrol.erp.inbound.service
 
 import org.opencontrol.erp.audit.service.AuditService
+import org.opencontrol.erp.catalog.domain.model.Product
+import org.opencontrol.erp.catalog.domain.model.ProductCategory
+import org.opencontrol.erp.catalog.repository.ProductCategoryRepository
 import org.opencontrol.erp.catalog.repository.ProductRepository
 import org.opencontrol.erp.catalog.service.PricingService
 import org.opencontrol.erp.crm.domain.model.Customer
@@ -29,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.security.SecureRandom
 import java.time.Instant
 import java.util.UUID
 
@@ -38,6 +42,7 @@ class InboundInvoiceService(
     private val invoiceRepository: InboundInvoiceRepository,
     private val customerRepository: CustomerRepository,
     private val productRepository: ProductRepository,
+    private val categoryRepository: ProductCategoryRepository,
     private val supplierProductMappingRepository: SupplierProductMappingRepository,
     private val costFormulaProfileRepository: CostFormulaProfileRepository,
     private val stockBalanceRepository: StockBalanceRepository,
@@ -47,6 +52,7 @@ class InboundInvoiceService(
     private val pricingService: PricingService,
     private val auditService: AuditService,
 ) {
+    private val random = SecureRandom()
     private fun getCurrentTenantId(): UUID = SecurityContextHolder.getCurrentTenantId()
 
     @Transactional(readOnly = true)
@@ -76,7 +82,12 @@ class InboundInvoiceService(
         return mapToResponse(invoice)
     }
 
-    fun uploadXml(file: MultipartFile, branchId: UUID, profileId: UUID? = null): InboundInvoiceResponse {
+    fun uploadXml(
+        file: MultipartFile,
+        branchId: UUID,
+        profileId: UUID? = null,
+        autoRegisterMissingProducts: Boolean = false,
+    ): InboundInvoiceResponse {
         val tenantId = getCurrentTenantId()
         val parsed = xmlParserService.parse(file.inputStream)
 
@@ -108,13 +119,61 @@ class InboundInvoiceService(
             status = InboundInvoiceStatus.DRAFT,
         )
 
-        // Map items and auto-match with known mappings
+        // Map items and auto-match with known mappings OR auto-identify in catalog
         parsed.items.forEach { itemParsed ->
-            val mapping = supplierProductMappingRepository.findByTenantIdAndSupplierIdAndSupplierItemCode(
+            var mapping = supplierProductMappingRepository.findByTenantIdAndSupplierIdAndSupplierItemCode(
                 tenantId, supplier.id, itemParsed.supplierItemCode
             ).orElse(null)
 
-            val matchedProductId = mapping?.productId
+            var matchedProduct: Product? = null
+
+            if (mapping != null) {
+                matchedProduct = productRepository.findByIdAndTenantId(mapping.productId, tenantId).orElse(null)
+            } else {
+                // Auto-identification heuristics from existing catalog
+                val barcode = itemParsed.supplierBarcode?.trim()?.takeIf {
+                    it.isNotBlank() && !it.equals("SEM GTIN", ignoreCase = true) && !it.equals("SEM_GTIN", ignoreCase = true)
+                }
+
+                // 1. By Barcode / EAN
+                if (barcode != null) {
+                    matchedProduct = productRepository.findByTenantIdAndBarcode(tenantId, barcode).orElse(null)
+                }
+
+                // 2. By SKU matching supplier item code
+                if (matchedProduct == null) {
+                    matchedProduct = productRepository.findByTenantIdAndSku(tenantId, itemParsed.supplierItemCode.trim()).orElse(null)
+                }
+
+                // 3. By exact Product Name (ignore case)
+                if (matchedProduct == null) {
+                    matchedProduct = productRepository.findByTenantIdAndNameIgnoreCase(tenantId, itemParsed.description.trim()).orElse(null)
+                }
+
+                // If found in catalog, save de-para mapping for future imports
+                if (matchedProduct != null) {
+                    val newMapping = SupplierProductMapping(
+                        tenantId = tenantId,
+                        supplierId = supplier.id,
+                        supplierItemCode = itemParsed.supplierItemCode.trim(),
+                        supplierBarcode = barcode,
+                        productId = matchedProduct.id,
+                        supplierUom = itemParsed.uom,
+                        conversionFactor = BigDecimal.ONE,
+                    )
+                    mapping = supplierProductMappingRepository.save(newMapping)
+                }
+            }
+
+            // If still not identified and user requested automatic registration:
+            if (matchedProduct == null && autoRegisterMissingProducts) {
+                matchedProduct = createAndMapProduct(tenantId, supplier.id, itemParsed)
+                mapping = supplierProductMappingRepository.findByTenantIdAndSupplierIdAndSupplierItemCode(
+                    tenantId, supplier.id, itemParsed.supplierItemCode.trim()
+                ).orElse(null)
+            }
+
+            val matchedProductId = matchedProduct?.id ?: mapping?.productId
             val conversionFactor = mapping?.conversionFactor ?: BigDecimal.ONE
             val internalQuantity = itemParsed.quantity.multiply(conversionFactor).setScale(4, RoundingMode.HALF_UP)
 
@@ -126,7 +185,7 @@ class InboundInvoiceService(
                 supplierItemDescription = itemParsed.description,
                 matchedProductId = matchedProductId,
                 supplierUom = itemParsed.uom,
-                internalUom = mapping?.supplierUom ?: itemParsed.uom,
+                internalUom = matchedProduct?.unitOfMeasure ?: mapping?.supplierUom ?: itemParsed.uom,
                 conversionFactor = conversionFactor,
                 invoicedQuantity = itemParsed.quantity,
                 internalQuantity = internalQuantity,
@@ -161,6 +220,147 @@ class InboundInvoiceService(
         return mapToResponse(saved)
     }
 
+    fun autoRegisterMissingProducts(invoiceId: UUID): InboundInvoiceResponse {
+        val tenantId = getCurrentTenantId()
+        val invoice = invoiceRepository.findByIdAndTenantId(invoiceId, tenantId)
+            .orElseThrow { IllegalArgumentException("Nota fiscal com ID '$invoiceId' não encontrada.") }
+
+        val unmappedItems = invoice.items.filter { it.matchedProductId == null }
+        if (unmappedItems.isEmpty()) {
+            return mapToResponse(invoice)
+        }
+
+        val profile = invoice.costFormulaProfileId?.let {
+            costFormulaProfileRepository.findByIdAndTenantId(it, tenantId).orElse(null)
+        }
+
+        for (item in unmappedItems) {
+            // First check if catalog already has this SKU or name
+            var matchedProduct = productRepository.findByTenantIdAndSku(tenantId, item.supplierItemCode.trim()).orElse(null)
+            if (matchedProduct == null) {
+                matchedProduct = productRepository.findByTenantIdAndNameIgnoreCase(tenantId, item.supplierItemDescription.trim()).orElse(null)
+            }
+
+            if (matchedProduct == null) {
+                // Register new product in catalog
+                val parsedMock = ParsedNFeItem(
+                    itemIndex = item.itemIndex,
+                    supplierItemCode = item.supplierItemCode,
+                    supplierBarcode = null,
+                    description = item.supplierItemDescription,
+                    ncm = "00000000",
+                    cfop = "0000",
+                    uom = item.supplierUom,
+                    quantity = item.invoicedQuantity,
+                    unitPrice = item.unitPrice,
+                    totalPrice = item.totalPrice,
+                    freight = item.allocatedFreight,
+                    insurance = item.allocatedInsurance,
+                    expenses = item.allocatedExpenses,
+                    discount = BigDecimal.ZERO,
+                    icmsAmount = item.icmsAmount,
+                    ipiAmount = item.ipiAmount,
+                    pisAmount = item.pisAmount,
+                    cofinsAmount = item.cofinsAmount,
+                )
+                matchedProduct = createAndMapProduct(tenantId, invoice.supplierId, parsedMock)
+            } else {
+                // Save de-para mapping
+                val mapping = SupplierProductMapping(
+                    tenantId = tenantId,
+                    supplierId = invoice.supplierId,
+                    supplierItemCode = item.supplierItemCode.trim(),
+                    productId = matchedProduct.id,
+                    supplierUom = item.supplierUom,
+                    conversionFactor = BigDecimal.ONE,
+                )
+                supplierProductMappingRepository.save(mapping)
+            }
+
+            item.matchedProductId = matchedProduct.id
+            item.internalUom = matchedProduct.unitOfMeasure
+            item.conversionFactor = BigDecimal.ONE
+            item.internalQuantity = item.invoicedQuantity
+
+            calculateItemCost(item, profile)
+        }
+
+        invoice.updatedAt = Instant.now()
+        val saved = invoiceRepository.save(invoice)
+
+        auditService.recordAudit(
+            entityType = "InboundInvoice",
+            entityId = saved.id.toString(),
+            action = "AUTO_REGISTER_PRODUCTS",
+            details = "Cadastrados e vinculados automaticamente ${unmappedItems.size} produtos na NF-e ${saved.invoiceNumber}",
+            stateAfter = saved,
+        )
+
+        return mapToResponse(saved)
+    }
+
+    private fun createAndMapProduct(tenantId: UUID, supplierId: UUID, item: ParsedNFeItem): Product {
+        val category = categoryRepository.findAllByTenantIdAndIsActiveTrueOrderByCodeAsc(tenantId)
+            .firstOrNull()
+            ?: categoryRepository.save(
+                ProductCategory(
+                    tenantId = tenantId,
+                    code = "GERAL",
+                    name = "Geral",
+                    colorHex = "#10B981",
+                    isActive = true,
+                )
+            )
+
+        val cleanSku = if (!productRepository.existsByTenantIdAndSku(tenantId, item.supplierItemCode.trim())) {
+            item.supplierItemCode.trim()
+        } else {
+            "PRD-${random.nextInt(90000) + 10000}"
+        }
+
+        val barcode = item.supplierBarcode?.trim()?.takeIf {
+            it.isNotBlank() && !it.equals("SEM GTIN", ignoreCase = true) && !it.equals("SEM_GTIN", ignoreCase = true)
+        }
+
+        val finalBarcode = if (barcode != null && !productRepository.existsByTenantIdAndBarcode(tenantId, barcode)) {
+            barcode
+        } else {
+            null
+        }
+
+        val cleanNcm = if (item.ncm.isNotBlank() && item.ncm.length <= 8) item.ncm.trim() else "00000000"
+        val cleanUom = if (item.uom.isNotBlank() && item.uom.length <= 10) item.uom.trim().uppercase() else "UN"
+
+        val product = Product(
+            tenantId = tenantId,
+            sku = cleanSku,
+            barcode = finalBarcode,
+            name = item.description.trim(),
+            unitOfMeasure = cleanUom,
+            categoryId = category.id,
+            ncm = cleanNcm,
+            lastAcquisitionCost = item.unitPrice,
+            averageCost = item.unitPrice,
+            replacementCost = item.unitPrice,
+            isActive = true,
+        )
+
+        val saved = productRepository.save(product)
+
+        val mapping = SupplierProductMapping(
+            tenantId = tenantId,
+            supplierId = supplierId,
+            supplierItemCode = item.supplierItemCode.trim(),
+            supplierBarcode = finalBarcode,
+            productId = saved.id,
+            supplierUom = item.uom,
+            conversionFactor = BigDecimal.ONE,
+        )
+        supplierProductMappingRepository.save(mapping)
+
+        return saved
+    }
+
     fun matchProduct(invoiceId: UUID, itemId: UUID, request: MatchProductRequest): InboundInvoiceResponse {
         val tenantId = getCurrentTenantId()
         val invoice = invoiceRepository.findByIdAndTenantId(invoiceId, tenantId)
@@ -181,21 +381,26 @@ class InboundInvoiceService(
         val existingMapping = supplierProductMappingRepository.findByTenantIdAndSupplierIdAndSupplierItemCode(
             tenantId, invoice.supplierId, item.supplierItemCode
         )
-        val mapping = existingMapping.orElseGet {
-            SupplierProductMapping(
+
+        if (existingMapping.isPresent) {
+            val mapping = existingMapping.get()
+            mapping.productId = product.id
+            mapping.conversionFactor = request.conversionFactor
+            mapping.updatedAt = Instant.now()
+            supplierProductMappingRepository.save(mapping)
+        } else {
+            val newMapping = SupplierProductMapping(
                 tenantId = tenantId,
                 supplierId = invoice.supplierId,
                 supplierItemCode = item.supplierItemCode,
                 productId = product.id,
+                supplierUom = item.supplierUom,
+                conversionFactor = request.conversionFactor,
             )
+            supplierProductMappingRepository.save(newMapping)
         }
-        mapping.productId = product.id
-        mapping.conversionFactor = request.conversionFactor
-        mapping.supplierBarcode = request.supplierBarcode
-        mapping.supplierUom = item.supplierUom
-        mapping.updatedAt = Instant.now()
-        supplierProductMappingRepository.save(mapping)
 
+        // Recalculate cost
         val profile = invoice.costFormulaProfileId?.let {
             costFormulaProfileRepository.findByIdAndTenantId(it, tenantId).orElse(null)
         }
@@ -203,33 +408,76 @@ class InboundInvoiceService(
 
         invoice.updatedAt = Instant.now()
         val saved = invoiceRepository.save(invoice)
+
+        auditService.recordAudit(
+            entityType = "InboundInvoice",
+            entityId = saved.id.toString(),
+            action = "MATCH_PRODUCT",
+            details = "Matched item '${item.supplierItemCode}' to product '${product.name}' with factor ${request.conversionFactor}",
+            stateAfter = saved,
+        )
+
         return mapToResponse(saved)
+    }
+
+    private fun calculateItemCost(item: InboundInvoiceItem, profile: CostFormulaProfile?) {
+        val qty = if (item.internalQuantity > BigDecimal.ZERO) item.internalQuantity else BigDecimal.ONE
+        val invoiceUnitPrice = item.totalPrice.divide(qty, 4, RoundingMode.HALF_UP)
+
+        if (profile != null && profile.formulaExpression.isNotBlank()) {
+            val vars = mutableMapOf<String, BigDecimal>()
+            vars["INVOICE_UNIT_PRICE"] = invoiceUnitPrice
+            vars["QUANTITY"] = qty
+            vars["FREIGHT_ALLOCATED"] = item.allocatedFreight
+            vars["INSURANCE_ALLOCATED"] = item.allocatedInsurance
+            vars["OTHER_EXPENSES_ALLOCATED"] = item.allocatedExpenses
+            vars["ICMS_CREDIT"] = item.icmsCreditAmount.divide(qty, 4, RoundingMode.HALF_UP)
+            vars["PIS_CREDIT"] = item.pisCreditAmount.divide(qty, 4, RoundingMode.HALF_UP)
+            vars["COFINS_CREDIT"] = item.cofinsCreditAmount.divide(qty, 4, RoundingMode.HALF_UP)
+            vars["IPI_COST"] = item.ipiAmount.divide(qty, 4, RoundingMode.HALF_UP)
+            vars["ICMS_ST_COST"] = BigDecimal.ZERO
+
+            val computedUnitCost = formulaEngine.evaluate(profile.formulaExpression, vars)
+            item.finalLandedUnitCost = computedUnitCost
+            item.finalTotalCost = computedUnitCost.multiply(qty).setScale(4, RoundingMode.HALF_UP)
+        } else {
+            // Default statutory landed cost: UnitPrice + (Freight+Insurance+Expenses)/Qty - Taxes
+            val extraPerUnit = item.allocatedFreight.add(item.allocatedInsurance).add(item.allocatedExpenses)
+                .divide(qty, 4, RoundingMode.HALF_UP)
+            val taxCreditsPerUnit = item.icmsCreditAmount.add(item.pisCreditAmount).add(item.cofinsCreditAmount)
+                .divide(qty, 4, RoundingMode.HALF_UP)
+            val defaultUnitCost = invoiceUnitPrice.add(extraPerUnit).subtract(taxCreditsPerUnit).max(BigDecimal.ZERO)
+
+            item.finalLandedUnitCost = defaultUnitCost
+            item.finalTotalCost = defaultUnitCost.multiply(qty).setScale(4, RoundingMode.HALF_UP)
+        }
     }
 
     fun finalizeStock(invoiceId: UUID, request: FinalizeInvoiceStockRequest): InboundInvoiceResponse {
         val tenantId = getCurrentTenantId()
         val invoice = invoiceRepository.findByIdAndTenantId(invoiceId, tenantId)
-            .orElseThrow { IllegalArgumentException("Nota fiscal '$invoiceId' não encontrada.") }
+            .orElseThrow { IllegalArgumentException("Nota fiscal de entrada '$invoiceId' não encontrada.") }
 
         if (invoice.status == InboundInvoiceStatus.STOCKED) {
             throw IllegalStateException("Nota fiscal já foi estocada anteriormente.")
         }
 
-        val unmapped = invoice.items.find { it.matchedProductId == null }
-        if (unmapped != null) {
-            throw IllegalStateException("Todos os itens da nota fiscal devem ser vinculados a um produto antes da estocagem. Item pendente: ${unmapped.supplierItemDescription}")
+        // Verify all items are matched
+        val unmapped = invoice.items.filter { it.matchedProductId == null }
+        if (unmapped.isNotEmpty()) {
+            throw IllegalStateException("Existem ${unmapped.size} itens não vinculados a produtos do catálogo.")
         }
 
         invoice.items.forEach { item ->
             val product = productRepository.findByIdAndTenantId(item.matchedProductId!!, tenantId)
-                .orElseThrow { IllegalArgumentException("Produto ${item.matchedProductId} não encontrado.") }
+                .orElseThrow { NoSuchElementException("Produto não encontrado: ${item.matchedProductId}") }
 
             val inboundQty = item.internalQuantity
             val landedUnitCost = item.finalLandedUnitCost
 
-            // Recalculate CMP
-            val currentBalances = stockBalanceRepository.findAllByTenantIdAndProductId(tenantId, product.id)
-            val currentStock = currentBalances.fold(BigDecimal.ZERO) { acc, sb -> acc.add(sb.quantityOnHand) }
+            val currentStock = stockBalanceRepository.findAllByTenantIdAndProductId(tenantId, product.id)
+                .map { it.quantityOnHand }
+                .fold(BigDecimal.ZERO) { acc, q -> acc.add(q) }
 
             val newCmp = pricingService.calculateWeightedAverageCost(
                 currentQty = currentStock,
@@ -244,20 +492,25 @@ class InboundInvoiceService(
             productRepository.save(product)
 
             // Update StockBalance
-            val balance = stockBalanceRepository.findByWarehouseIdAndProductIdAndLocationIdIsNull(request.warehouseId, product.id)
-                .orElseGet {
-                    StockBalance(
-                        tenantId = tenantId,
-                        warehouseId = request.warehouseId,
-                        productId = product.id,
-                    )
-                }
+            val balance = stockBalanceRepository.findByWarehouseIdAndProductIdAndLocationIdIsNull(
+                request.warehouseId, product.id
+            ).orElseGet {
+                StockBalance(
+                    tenantId = tenantId,
+                    warehouseId = request.warehouseId,
+                    productId = product.id,
+                    quantityOnHand = BigDecimal.ZERO,
+                    quantityReserved = BigDecimal.ZERO,
+                    quantityAvailable = BigDecimal.ZERO,
+                )
+            }
+
             balance.quantityOnHand = balance.quantityOnHand.add(inboundQty)
-            balance.quantityAvailable = balance.quantityAvailable.add(inboundQty)
+            balance.quantityAvailable = balance.quantityOnHand.subtract(balance.quantityReserved)
             balance.updatedAt = Instant.now()
             stockBalanceRepository.save(balance)
 
-            // Write double-entry stock movement record
+            // Immutable Movement posting (TRANSFER_IN / INBOUND_PURCHASE)
             val movement = StockMovement(
                 tenantId = tenantId,
                 branchId = invoice.branchId,
@@ -288,25 +541,6 @@ class InboundInvoiceService(
         return mapToResponse(saved)
     }
 
-    private fun calculateItemCost(item: InboundInvoiceItem, profile: CostFormulaProfile?) {
-        val formula = profile?.formulaExpression ?: "= INVOICE_UNIT_PRICE + (FREIGHT_ALLOCATED / QUANTITY)"
-        val vars = mutableMapOf(
-            "INVOICE_UNIT_PRICE" to item.unitPrice,
-            "QUANTITY" to if (item.internalQuantity > BigDecimal.ZERO) item.internalQuantity else BigDecimal.ONE,
-            "FREIGHT_ALLOCATED" to item.allocatedFreight,
-            "INSURANCE_ALLOCATED" to item.allocatedInsurance,
-            "OTHER_EXPENSES" to item.allocatedExpenses,
-            "IPI_COST" to item.ipiAmount,
-            "ICMS_CREDIT" to item.icmsCreditAmount,
-            "PIS_CREDIT" to item.pisCreditAmount,
-            "COFINS_CREDIT" to item.cofinsCreditAmount,
-        )
-
-        val landedUnitCost = formulaEngine.evaluate(formula, vars)
-        item.finalLandedUnitCost = landedUnitCost
-        item.finalTotalCost = landedUnitCost.multiply(item.internalQuantity).setScale(4, RoundingMode.HALF_UP)
-    }
-
     private fun lookupOrCreateSupplier(tenantId: UUID, document: String, legalName: String, tradeName: String?): Customer {
         val cleanDoc = document.trim().replace(Regex("[^0-9]"), "")
         val existing = customerRepository.findByTenantIdAndDocument(tenantId, cleanDoc)
@@ -328,16 +562,31 @@ class InboundInvoiceService(
         val tenantId = inv.tenantId
         val supplierName = customerRepository.findByIdAndTenantId(inv.supplierId, tenantId)
             .map { it.legalName }
-            .orElse(null)
+            .orElse("Fornecedor não identificado")
 
         val profileName = inv.costFormulaProfileId?.let {
             costFormulaProfileRepository.findByIdAndTenantId(it, tenantId).map { p -> p.name }.orElse(null)
         }
 
-        val productIds = inv.items.mapNotNull { it.matchedProductId }.toSet()
-        val products = productRepository.findAllById(productIds)
-        val itemDetails = products.associate { it.id to Pair(it.name, it.sku) }
+        val productIds = inv.items.mapNotNull { it.matchedProductId }
+        val productMap = if (productIds.isNotEmpty()) {
+            productRepository.findAllById(productIds).associateBy { it.id }
+        } else {
+            emptyMap()
+        }
 
-        return InboundInvoiceResponse.fromEntity(inv, supplierName, profileName, itemDetails)
+        val itemDetails = inv.items.mapNotNull { item ->
+            item.matchedProductId?.let { id ->
+                val prod = productMap[id]
+                if (prod != null) id to Pair(prod.name, prod.sku) else null
+            }
+        }.toMap()
+
+        return InboundInvoiceResponse.fromEntity(
+            inv = inv,
+            supplierName = supplierName,
+            profileName = profileName,
+            itemDetails = itemDetails,
+        )
     }
 }

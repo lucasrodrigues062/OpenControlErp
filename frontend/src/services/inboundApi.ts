@@ -85,10 +85,16 @@ export const inboundApi = {
     return res.data;
   },
 
-  async uploadNFeXml(formData: FormData): Promise<InboundInvoice> {
+  async uploadNFeXml(formData: FormData, autoRegisterMissingProducts: boolean = false): Promise<InboundInvoice> {
     const res = await api.post<InboundInvoice>('/invoices/upload-xml', formData, {
+      params: { autoRegisterMissingProducts },
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return res.data;
+  },
+
+  async autoRegisterMissingProducts(invoiceId: string): Promise<InboundInvoice> {
+    const res = await api.post<InboundInvoice>(`/invoices/${invoiceId}/auto-register-missing-products`);
     return res.data;
   },
 

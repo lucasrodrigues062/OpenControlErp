@@ -3,10 +3,13 @@ package org.opencontrol.erp.inbound.service
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.opencontrol.erp.audit.service.AuditService
 import org.opencontrol.erp.catalog.domain.model.Product
+import org.opencontrol.erp.catalog.domain.model.ProductCategory
+import org.opencontrol.erp.catalog.repository.ProductCategoryRepository
 import org.opencontrol.erp.catalog.repository.ProductRepository
 import org.opencontrol.erp.catalog.service.PricingService
 import org.opencontrol.erp.crm.domain.model.Customer
@@ -35,6 +38,7 @@ class InboundInvoiceServiceTest {
     private val invoiceRepository: InboundInvoiceRepository = mockk()
     private val customerRepository: CustomerRepository = mockk()
     private val productRepository: ProductRepository = mockk()
+    private val categoryRepository: ProductCategoryRepository = mockk(relaxed = true)
     private val supplierProductMappingRepository: SupplierProductMappingRepository = mockk()
     private val costFormulaProfileRepository: CostFormulaProfileRepository = mockk()
     private val stockBalanceRepository: StockBalanceRepository = mockk()
@@ -68,6 +72,7 @@ class InboundInvoiceServiceTest {
             invoiceRepository,
             customerRepository,
             productRepository,
+            categoryRepository,
             supplierProductMappingRepository,
             costFormulaProfileRepository,
             stockBalanceRepository,
@@ -191,5 +196,85 @@ class InboundInvoiceServiceTest {
         assertEquals(InboundInvoiceStatus.STOCKED, res.status)
         assertEquals(BigDecimal("105.0000"), product.averageCost)
         assertEquals(BigDecimal("105.0000"), product.lastAcquisitionCost)
+    }
+
+    @Test
+    fun `should auto-register missing products when autoRegisterMissingProducts is called`() {
+        val invoice = InboundInvoice(
+            id = invoiceId,
+            tenantId = tenantId,
+            branchId = branchId,
+            supplierId = supplierId,
+            invoiceNumber = "999",
+            issuanceDate = LocalDate.now(),
+            status = InboundInvoiceStatus.DRAFT,
+        )
+        val item = InboundInvoiceItem(
+            id = itemId,
+            tenantId = tenantId,
+            inboundInvoice = invoice,
+            itemIndex = 1,
+            supplierItemCode = "ITEM-UNKNOWN-99",
+            supplierItemDescription = "Produto Novo Importado",
+            matchedProductId = null, // unmapped
+            invoicedQuantity = BigDecimal("5.0000"),
+            internalQuantity = BigDecimal("5.0000"),
+            supplierUom = "UN",
+            unitPrice = BigDecimal("25.0000"),
+            totalPrice = BigDecimal("125.0000"),
+        )
+        invoice.items.add(item)
+
+        val defaultCat = ProductCategory(
+            id = UUID.randomUUID(),
+            tenantId = tenantId,
+            code = "GERAL",
+            name = "Geral",
+        )
+
+        every { invoiceRepository.findByIdAndTenantId(invoiceId, tenantId) } returns Optional.of(invoice)
+        every { productRepository.findByTenantIdAndSku(tenantId, "ITEM-UNKNOWN-99") } returns Optional.empty()
+        every { productRepository.findByTenantIdAndNameIgnoreCase(tenantId, "Produto Novo Importado") } returns Optional.empty()
+        every { categoryRepository.findAllByTenantIdAndIsActiveTrueOrderByCodeAsc(tenantId) } returns listOf(defaultCat)
+        every { productRepository.existsByTenantIdAndSku(tenantId, "ITEM-UNKNOWN-99") } returns false
+        every { productRepository.save(any()) } answers {
+            val p = firstArg<Product>()
+            Product(
+                id = UUID.randomUUID(),
+                tenantId = p.tenantId,
+                sku = p.sku,
+                barcode = p.barcode,
+                name = p.name,
+                unitOfMeasure = p.unitOfMeasure,
+                categoryId = p.categoryId,
+                ncm = p.ncm,
+                lastAcquisitionCost = p.lastAcquisitionCost,
+                averageCost = p.averageCost,
+                replacementCost = p.replacementCost,
+            )
+        }
+        every { supplierProductMappingRepository.save(any()) } answers { firstArg() }
+        every { invoiceRepository.save(any()) } answers { firstArg() }
+        every { customerRepository.findByIdAndTenantId(supplierId, tenantId) } returns Optional.empty()
+        every { productRepository.findAllById(any()) } answers {
+            val ids = firstArg<Iterable<UUID>>()
+            ids.map { id ->
+                Product(
+                    id = id,
+                    tenantId = tenantId,
+                    sku = "ITEM-UNKNOWN-99",
+                    name = "Produto Novo Importado",
+                    ncm = "00000000",
+                    categoryId = defaultCat.id,
+                )
+            }
+        }
+
+        val res = service.autoRegisterMissingProducts(invoiceId)
+
+        assertEquals(1, res.items.size)
+        assertNotNull(res.items[0].matchedProductId)
+        assertEquals("ITEM-UNKNOWN-99", res.items[0].matchedProductSku)
+        assertEquals("Produto Novo Importado", res.items[0].matchedProductName)
     }
 }
