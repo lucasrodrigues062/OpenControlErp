@@ -24,6 +24,10 @@ import { CustomersPage } from './pages/crm/CustomersPage';
 import { CustomerDetailPage } from './pages/crm/CustomerDetailPage';
 import { LeadsPage } from './pages/crm/LeadsPage';
 import { SalesPipelinePage } from './pages/crm/SalesPipelinePage';
+import { PurchaseOrdersPage } from './pages/inbound/PurchaseOrdersPage';
+import { InboundInvoicesPage } from './pages/inbound/InboundInvoicesPage';
+import { CostFormulasPage } from './pages/inbound/CostFormulasPage';
+import { StockTransfersPage } from './pages/inbound/StockTransfersPage';
 
 const queryClient = new QueryClient();
 
@@ -74,6 +78,10 @@ export const App: React.FC = () => {
                       <Route path="/inventory/traceability" element={<LotsAndSerialsPage />} />
                       <Route path="/inventory/movements" element={<KardexMovementsPage />} />
                     </Route>
+                    <Route path="/inbound/purchase-orders" element={<PurchaseOrdersPage />} />
+                    <Route path="/inbound/invoices" element={<InboundInvoicesPage />} />
+                    <Route path="/inbound/cost-formulas" element={<CostFormulasPage />} />
+                    <Route path="/inbound/transfers" element={<StockTransfersPage />} />
                     <Route element={<ProtectedRoute requiredPermission="COMPANIES_READ" />}>
                       <Route path="/companies" element={<CompaniesPage />} />
                     </Route>

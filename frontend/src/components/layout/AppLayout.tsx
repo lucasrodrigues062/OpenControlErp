@@ -27,6 +27,10 @@ import {
   BadgePercent,
   Boxes,
   Warehouse,
+  ShoppingCart,
+  FileText,
+  Calculator,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -68,6 +72,17 @@ const navGroups: NavGroup[] = [
       { nameKey: 'inventory.warehousesTitle', defaultName: 'Depósitos & Boxes', href: '/inventory/warehouses', icon: Warehouse, permission: 'INVENTORY_READ' },
       { nameKey: 'inventory.traceabilityTitle', defaultName: 'Lotes (FEFO) & Seriais', href: '/inventory/traceability', icon: ShieldCheck, permission: 'INVENTORY_READ' },
       { nameKey: 'inventory.kardexTitle', defaultName: 'Extrato Kardex', href: '/inventory/movements', icon: History, permission: 'INVENTORY_READ' },
+    ],
+  },
+  {
+    id: 'inbound',
+    titleKey: { pt: 'Compras & Entradas', en: 'Inbound & Purchases' },
+    icon: ShoppingCart,
+    items: [
+      { nameKey: 'inbound.purchaseOrdersTitle', defaultName: 'Pedidos ao Fornecedor', href: '/inbound/purchase-orders', icon: ShoppingCart },
+      { nameKey: 'inbound.invoicesTitle', defaultName: 'Entrada de NF-e (XML)', href: '/inbound/invoices', icon: FileText },
+      { nameKey: 'inbound.costFormulasTitle', defaultName: 'Fórmulas de Custo (Landed)', href: '/inbound/cost-formulas', icon: Calculator },
+      { nameKey: 'inbound.transfersTitle', defaultName: 'Transferências de Estoque', href: '/inbound/transfers', icon: ArrowRightLeft },
     ],
   },
   {

@@ -43,3 +43,8 @@ export const generateSerialNumber = (): string => {
   const rand = Math.floor(100000 + Math.random() * 900000);
   return `SN-${year}-${rand}`;
 };
+
+export const generatePurchaseOrderCode = (): string => generateCode('PC', 5);
+
+export const generateTransferCode = (): string => generateCode('TRF', 5);
+
